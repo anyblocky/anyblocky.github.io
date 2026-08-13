@@ -110,7 +110,7 @@
     <button id="btnBack">← Меню</button>
     <button id="btnFS" title="Во весь экран">⛶</button>
     <span id="hudCoins">🪙 0</span>
-    <span id="hudOnline" class="hidden">🌐 1</span>
+    <span id="hudOnline" class="hidden">🌐⏳</span>
     <input id="chatIn" class="hidden" placeholder="чат Enter…" style="width:150px">
   </div>
   <div id="chatBox"></div>
@@ -197,7 +197,7 @@ border-radius:4px;</textarea>
 <div id="settings" class="modal hidden">
   <div class="mCard">
     <b>⚙ Настройки</b>
-    <label style="font-size:13px">Комната онлайн:<input id="setRoom" placeholder="main"></label>
+    <label style="font-size:13px">Комната онлайн (одинаковая у всех игроков):<input id="setRoom" placeholder="main"></label>
     <label style="font-size:13px">Google Client ID:<input id="setGid" placeholder="xxxx.apps.googleusercontent.com"></label>
     <label style="font-size:13px">Свой сервер (HTTP), необязательно:<input id="setUrl" placeholder="http://localhost:8080"></label>
     <button class="primary" id="setSave">Сохранить</button>
@@ -224,14 +224,11 @@ if(COARSE)document.body.classList.add('coarse');
 function show(id){['menu','game','studio','expo','shop'].forEach(s=>$('#'+s).classList.toggle('hidden',s!==id));}
 function updCoins(){$('#coinChip').textContent='🪙 '+coins;$('#hudCoins').textContent='🪙 '+coins;$('#shCoins').textContent='🪙 '+coins;}
 function addCoins(n){coins+=n;store.set('bb_coins',coins);updCoins();toast('+'+n+' эникойнов 🪙');}
-
-/* ============ ВО ВЕСЬ ЭКРАН ============ */
 function goFS(){const el=document.documentElement;
   try{
     if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return;}
     const rq=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
     if(rq)rq.call(el).catch(()=>{});
-    else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
   }catch(e){}}
 $('#btnFS').onclick=goFS;
 
@@ -449,17 +446,28 @@ function useTool(wx,wy,btn){
 function actFront(a){const s=G.self,tx=Math.floor((s.x+s.face*40)/T),ty=Math.floor(s.y/T);
   if(a==='place')world[ty*W+tx]=G.copyType||4;else if(getT(tx,ty)!==9)world[ty*W+tx]=0;}
 
-/* ============ СЕТЬ ============ */
-const MQ={ws:null,ok:false,keep:null,
- urls:['wss://broker.emqx.io:8084/mqtt','wss://test.mosquitto.org:8081/mqtt'],
- connect(){this.ok=false;this.tryUrl(0);},
- tryUrl(i){if(i>=this.urls.length)return;
-  try{const ws=new WebSocket(this.urls[i],['mqtt']);ws.binaryType='arraybuffer';
-   ws.onopen=()=>{try{ws.send(this.encConnect());}catch(e){}};
-   ws.onmessage=e=>{try{this.onMsg(new Uint8Array(e.data));}catch(err){}};
-   ws.onclose=()=>{if(!this.ok)this.tryUrl(i+1);};
-   ws.onerror=()=>{try{ws.close();}catch(e){}};
-   this.ws=ws;}catch(e){this.tryUrl(i+1);}},
+/* ============ СЕТЬ: НАДЁЖНЫЙ ОНЛАЙН ============ */
+const MQ={ws:null,ok:false,keep:null,tryT:0,
+ urls:['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'],
+ connect(){if(!G.net)return;this.ok=false;this.tryUrl(0);},
+ tryUrl(i){
+  if(!G.net)return;
+  if(i>=this.urls.length){
+    $('#hudOnline').textContent='🌐 вкладки';
+    toast('⚠ Брокеры недоступны. Онлайн между вкладками работает; повтор через 20 с');
+    clearTimeout(this.tryT);this.tryT=setTimeout(()=>this.connect(),20000);return;}
+  $('#hudOnline').textContent='🌐⏳';
+  try{
+    const ws=new WebSocket(this.urls[i],['mqtt']);ws.binaryType='arraybuffer';
+    const to=setTimeout(()=>{try{ws.close();}catch(e){}},4000); // таймаут — не зависаем
+    ws.onopen=()=>{try{ws.send(this.encConnect());}catch(e){}};
+    ws.onmessage=e=>{clearTimeout(to);try{this.onMsg(new Uint8Array(e.data));}catch(err){}};
+    ws.onclose=()=>{clearTimeout(to);
+      if(!this.ok)this.tryUrl(i+1);
+      else{this.ok=false;$('#hudOnline').textContent='🌐⏳';clearTimeout(this.tryT);this.tryT=setTimeout(()=>this.connect(),5000);}};
+    ws.onerror=()=>{try{ws.close();}catch(e){}};
+    this.ws=ws;
+  }catch(e){this.tryUrl(i+1);}},
  str(s){const b=[...new TextEncoder().encode(s)];return[b.length>>8,b.length&255,...b];},
  rl(n){const o=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;o.push(d);}while(n>0);return o;},
  pkt(t,body){return new Uint8Array([t,...this.rl(body.length),...body]);},
@@ -474,12 +482,13 @@ const MQ={ws:null,ok:false,keep:null,
   for(;;){const b=d[i++];v+=(b&127)*m;m*=128;if(!(b&128))break;}
   const body=d.slice(i);
   if(t===2){this.ok=true;this.subscribe();
-    this.keep=setInterval(()=>{if(this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]));},30000);
-    toast('🌐 Онлайн подключён (комната '+(settings.room||'main')+')');}
+    clearInterval(this.keep);
+    this.keep=setInterval(()=>{if(this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]));},25000);
+    toast('🌐 Онлайн подключён! Комната «'+(settings.room||'main')+'». Открой игру на 2-й вкладке/устройстве с той же комнатой');}
   else if(t===3){const tl=(body[0]<<8)|body[1];
-    const payload=JSON.parse(new TextDecoder().decode(body.slice(2+tl))||'null');
+    let payload=null;try{payload=JSON.parse(new TextDecoder().decode(body.slice(2+tl)));}catch(e){}
     if(payload&&payload.id)Net.recv({...payload,src:payload.id});}},
- close(){clearInterval(this.keep);this.ok=false;if(this.ws)try{this.ws.close();}catch(e){}}};
+ close(){clearInterval(this.keep);clearTimeout(this.tryT);this.ok=false;if(this.ws)try{this.ws.close();}catch(e){}}};
 const Net={id:Math.random().toString(36).slice(2,8),chan:null,timer:null,htimer:null,
  start(){if('BroadcastChannel'in window){this.chan=new BroadcastChannel('bb_online');this.chan.onmessage=e=>this.recv(e.data);}
    this.send({t:'hi'});this.timer=setInterval(()=>this.state(),120);
@@ -561,7 +570,7 @@ const ANY_EX='// ЭниЯзык — твой скрипт-предмет ✨ (к
 const JS_EX='// JavaScript\nfunction onUse(x,y,api){\n  api.explode(x,y,2);\n  api.particles(x,y,25,"#ffd23e");\n}\nfunction onUpdate(dt,api){}';
 const LESSONS=[
  {n:'Урок 1 — Привет',t:'Команда чат "текст" пишет в чат. Событие клик: срабатывает при ударе инструментом ✨ (клавиша 6).',c:'клик: чат "Привет, Эни Блок!"'},
- {n:'Урок 2 — Взрыв и частицы',t:'взрыв R — взрыв радиусом R блоков в точке клика. частицы N цвет — салют (цвета: красный, жёлтый, зелёный, синий, белый, фиолетовый, оранжевый или #код).',c:'клик: взрыв 2\nклик: частицы 30 оранжевый'},
+ {n:'Урок 2 — Взрыв и частицы',t:'взрыв R — взрыв радиусом R блоков в точке клика. частицы N цвет — салют.',c:'клик: взрыв 2\nклик: частицы 30 оранжевый'},
  {n:'Урок 3 — Стройка',t:'поставь DX DY блок — ставит блок со смещением от точки клика. Блоки: земля, камень, дерево, кирпич, стекло, платформа, ящик, лава.',c:'клик: поставь 0 0 кирпич\nклик: поставь 1 0 кирпич\nклик: поставь 0 -1 кирпич'},
  {n:'Урок 4 — Ломай',t:'ломай DX DY — ломает блок со смещением от клика.',c:'клик: ломай 0 0'},
  {n:'Урок 5 — Ракета',t:'ракета VX VY — запускает ракету со скоростью VX,VY (умножается на 10).',c:'клик: ракета 5 -3'},
@@ -640,7 +649,12 @@ function loop(ts){if(!G.running)return;const dt=Math.min(.033,(ts-last)/1000||.0
   for(let i=G.parts.length-1;i>=0;i--){const p=G.parts[i];p.vy+=900*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)G.parts.splice(i,1);}
   if(G.script&&G.script.onUpdate){try{G.script.onUpdate(dt,makeApi());}catch(e){}}
   Object.keys(G.remotes).forEach(k=>{if(performance.now()-G.remotes[k].last>4000)delete G.remotes[k];});
-  if(G.net)$('#hudOnline').textContent='🌐 '+(1+Object.keys(G.remotes).length);
+  if(G.net){
+    // если через 6 секунд никого нет — добавляем ботов, чтобы не было пусто
+    if(G.t>6&&G.bots.length===0&&Object.keys(G.remotes).length===0){
+      G.bots.push(makeBot('Бот Макс','#1b6ae2',1),makeBot('Бот Лея','#1bbf4b',4));
+      toast('Никого нет в комнате — добавлены боты 🤖');}
+    $('#hudOnline').textContent=MQ.ok?('🌐 '+(1+Object.keys(G.remotes).length)):(G.bots.length?'🌐 боты':'🌐');}
   draw();requestAnimationFrame(loop);}
 
 /* ============ СТАРТ ============ */
@@ -658,8 +672,8 @@ function startGame(opts={}){
   buildToolBar();updCoins();
   $('#chatIn').classList.toggle('hidden',!G.net);
   $('#hudOnline').classList.toggle('hidden',!G.net);
-  if(G.net){Net.start();toast('🌐 Онлайн: вкладки + устройства в комнате «'+(settings.room||'main')+'»');}
-  if(COARSE)goFS(); // на телефоне — сразу во весь экран
+  if(G.net){$('#hudOnline').textContent='🌐⏳';Net.start();}
+  if(COARSE)goFS();
   show('game');last=performance.now();requestAnimationFrame(loop);}
 function stopGame(){G.running=false;Net.stop();show('menu');}
 $('#btnBack').onclick=stopGame;
@@ -761,7 +775,7 @@ function buildLessons(){const w=$('#lesCards');w.innerHTML='';
     b2.onclick=()=>{ED.lang='any';ED.scrAny=L.c;$('#pTest').click();};
     row.appendChild(b1);row.appendChild(b2);d.appendChild(row);w.appendChild(d);});}
 $('#langSel').onchange=()=>{
-  ED[ED.lang==='any'?'scrAny':'scrJs']=$('#scrTxt').value;
+  ED[ED.lang==='any'?'scrAny':'scrJs=$('#scrTxt').value;
   ED.lang=$('#langSel').value;
   $('#scrTxt').value=ED.lang==='any'?ED.scrAny:ED.scrJs;
   $('#langHelp').style.display=ED.lang==='any'?'':'none';};
@@ -818,7 +832,6 @@ function buildExpo(){const c=$('#exCards');c.innerHTML='';
     d.querySelector('button').onclick=()=>startGame({project:p,mode:'sandbox'});
     c.appendChild(d);});}
 
-/* ресайз визуального вьюпорта (панели браузера на телефоне) */
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>{document.body.style.height=visualViewport.height+'px';});
 updCoins();drawPrev();
 </script>
