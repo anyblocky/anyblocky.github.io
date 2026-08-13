@@ -27,6 +27,7 @@
   .mBtns{display:flex;flex-direction:column;gap:9px;width:300px;max-width:92vw}
   #userChip{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;display:flex;gap:8px;align-items:center;background:#1a2236;padding:8px 12px;border-radius:30px}
   #coinChip{position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#1a2236;padding:8px 14px;border-radius:30px;font-weight:700;color:#ffd23e}
+  #onlineCount{position:absolute;top:calc(60px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#2b3650;padding:6px 12px;border-radius:20px;font-size:13px;color:#7fd4ff}
   #setBtn{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px}
   @media (max-height:700px){
     .logoImg{width:60px;height:60px}
@@ -89,6 +90,7 @@
 <div id="menu" class="screen">
   <div id="userChip" class="hidden"><span id="uName"></span><button id="logout">Выйти</button></div>
   <div id="coinChip">🪙 0</div>
+  <div id="onlineCount">👥 Онлайн: 1</div>
   <button id="setBtn">⚙ Настройки</button>
   <img class="logoImg" src="img/logo.png" alt="Эни Блок" onerror="this.style.display='none'">
   <canvas class="charPrev" id="prevCv" width="150" height="170"></canvas>
@@ -96,7 +98,7 @@
   <div class="mBtns">
     <button class="primary" id="btnPlay">⚔ Играть — строительная сражалка</button>
     <button id="btnSand">🧱 Песочница</button>
-    <button id="btnOnline">🌐 Онлайн</button>
+    <button id="btnOnline">🌐 Онлайн (без сервера)</button>
     <button id="btnShop">🛍 Каталог и кастомизация</button>
     <button id="btnStudio">🛠 Студия</button>
     <button id="btnExpo">🏆 Выставка игр</button>
@@ -199,7 +201,6 @@ border-radius:4px;</textarea>
     <b>⚙ Настройки</b>
     <label style="font-size:13px">Комната онлайн:<input id="setRoom" placeholder="main"></label>
     <label style="font-size:13px">Google Client ID:<input id="setGid" placeholder="xxxx.apps.googleusercontent.com"></label>
-    <label style="font-size:13px">Свой сервер (HTTP), необязательно:<input id="setUrl" placeholder="http://localhost:8080"></label>
     <button class="primary" id="setSave">Сохранить</button>
     <button id="setClose" style="background:#f1f3f4;color:#202124">Закрыть</button>
   </div>
@@ -211,7 +212,7 @@ border-radius:4px;</textarea>
 'use strict';
 const $=s=>document.querySelector(s);
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let settings=store.get('bb_set',{gid:'',serverUrl:'',room:'main'});
+let settings=store.get('bb_set',{gid:'',room:'main'});
 let user=store.get('bb_user',null);
 let coins=store.get('bb_coins',0);
 let skin=store.get('bb_skin','red');
@@ -224,14 +225,11 @@ if(COARSE)document.body.classList.add('coarse');
 function show(id){['menu','game','studio','expo','shop'].forEach(s=>$('#'+s).classList.toggle('hidden',s!==id));}
 function updCoins(){$('#coinChip').textContent='🪙 '+coins;$('#hudCoins').textContent='🪙 '+coins;$('#shCoins').textContent='🪙 '+coins;}
 function addCoins(n){coins+=n;store.set('bb_coins',coins);updCoins();toast('+'+n+' эникойнов 🪙');}
-
-/* ============ ВО ВЕСЬ ЭКРАН ============ */
 function goFS(){const el=document.documentElement;
   try{
     if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return;}
     const rq=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
     if(rq)rq.call(el).catch(()=>{});
-    else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
   }catch(e){}}
 $('#btnFS').onclick=goFS;
 
@@ -334,9 +332,9 @@ function updChip(){if(user){$('#userChip').classList.remove('hidden');$('#uName'
 $('#logout').onclick=()=>{user=null;localStorage.removeItem('bb_user');updChip();};
 updChip();
 if(settings.gid){const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';document.head.appendChild(s);}
-$('#setBtn').onclick=()=>{$('#setGid').value=settings.gid||'';$('#setUrl').value=settings.serverUrl||'';$('#setRoom').value=settings.room||'main';$('#settings').classList.remove('hidden');};
+$('#setBtn').onclick=()=>{$('#setGid').value=settings.gid||'';$('#setRoom').value=settings.room||'main';$('#settings').classList.remove('hidden');};
 $('#setClose').onclick=()=>$('#settings').classList.add('hidden');
-$('#setSave').onclick=()=>{settings={gid:$('#setGid').value.trim(),serverUrl:$('#setUrl').value.trim(),room:$('#setRoom').value.trim()||'main'};store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
+$('#setSave').onclick=()=>{settings={gid:$('#setGid').value.trim(),room:$('#setRoom').value.trim()||'main'};store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
 
 /* ============ ИНСТРУМЕНТЫ ============ */
 const TOOLS=[
@@ -449,17 +447,25 @@ function useTool(wx,wy,btn){
 function actFront(a){const s=G.self,tx=Math.floor((s.x+s.face*40)/T),ty=Math.floor(s.y/T);
   if(a==='place')world[ty*W+tx]=G.copyType||4;else if(getT(tx,ty)!==9)world[ty*W+tx]=0;}
 
-/* ============ СЕТЬ ============ */
-const MQ={ws:null,ok:false,keep:null,
- urls:['wss://broker.emqx.io:8084/mqtt','wss://test.mosquitto.org:8081/mqtt'],
+/* ============ СЕТЬ: MQTT + ВКЛАДКИ (БЕЗ СЕРВЕРА) ============ */
+const MQ={ws:null,ok:false,keep:null,tryT:0,
+ urls:['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'],
  connect(){this.ok=false;this.tryUrl(0);},
- tryUrl(i){if(i>=this.urls.length)return;
-  try{const ws=new WebSocket(this.urls[i],['mqtt']);ws.binaryType='arraybuffer';
-   ws.onopen=()=>{try{ws.send(this.encConnect());}catch(e){}};
-   ws.onmessage=e=>{try{this.onMsg(new Uint8Array(e.data));}catch(err){}};
-   ws.onclose=()=>{if(!this.ok)this.tryUrl(i+1);};
-   ws.onerror=()=>{try{ws.close();}catch(e){}};
-   this.ws=ws;}catch(e){this.tryUrl(i+1);}},
+ tryUrl(i){
+  if(i>=this.urls.length){
+    toast('⚠ Брокеры недоступны. Онлайн между вкладками работает');
+    clearTimeout(this.tryT);this.tryT=setTimeout(()=>this.connect(),20000);return;}
+  try{
+    const ws=new WebSocket(this.urls[i],['mqtt']);ws.binaryType='arraybuffer';
+    const to=setTimeout(()=>{try{ws.close();}catch(e){}},4000);
+    ws.onopen=()=>{try{ws.send(this.encConnect());}catch(e){}};
+    ws.onmessage=e=>{clearTimeout(to);try{this.onMsg(new Uint8Array(e.data));}catch(err){}};
+    ws.onclose=()=>{clearTimeout(to);
+      if(!this.ok)this.tryUrl(i+1);
+      else{this.ok=false;clearTimeout(this.tryT);this.tryT=setTimeout(()=>this.connect(),5000);}};
+    ws.onerror=()=>{try{ws.close();}catch(e){}};
+    this.ws=ws;
+  }catch(e){this.tryUrl(i+1);}},
  str(s){const b=[...new TextEncoder().encode(s)];return[b.length>>8,b.length&255,...b];},
  rl(n){const o=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;o.push(d);}while(n>0);return o;},
  pkt(t,body){return new Uint8Array([t,...this.rl(body.length),...body]);},
@@ -474,32 +480,31 @@ const MQ={ws:null,ok:false,keep:null,
   for(;;){const b=d[i++];v+=(b&127)*m;m*=128;if(!(b&128))break;}
   const body=d.slice(i);
   if(t===2){this.ok=true;this.subscribe();
-    this.keep=setInterval(()=>{if(this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]));},30000);
-    toast('🌐 Онлайн подключён (комната '+(settings.room||'main')+')');}
+    clearInterval(this.keep);
+    this.keep=setInterval(()=>{if(this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]));},25000);
+    toast('🌐 Онлайн подключён! Комната «'+(settings.room||'main')+'»');}
   else if(t===3){const tl=(body[0]<<8)|body[1];
-    const payload=JSON.parse(new TextDecoder().decode(body.slice(2+tl))||'null');
+    let payload=null;try{payload=JSON.parse(new TextDecoder().decode(body.slice(2+tl)));}catch(e){}
     if(payload&&payload.id)Net.recv({...payload,src:payload.id});}},
- close(){clearInterval(this.keep);this.ok=false;if(this.ws)try{this.ws.close();}catch(e){}}};
-const Net={id:Math.random().toString(36).slice(2,8),chan:null,timer:null,htimer:null,
+ close(){clearInterval(this.keep);clearTimeout(this.tryT);this.ok=false;if(this.ws)try{this.ws.close();}catch(e){}}};
+const Net={id:Math.random().toString(36).slice(2,8),chan:null,timer:null,
  start(){if('BroadcastChannel'in window){this.chan=new BroadcastChannel('bb_online');this.chan.onmessage=e=>this.recv(e.data);}
-   this.send({t:'hi'});this.timer=setInterval(()=>this.state(),120);
-   if(settings.serverUrl)this.htimer=setInterval(()=>this.http(),600);
+   this.timer=setInterval(()=>this.state(),50); // 50ms для реалтайма
    MQ.connect();},
- stop(){this.send({t:'bye'});clearInterval(this.timer);clearInterval(this.htimer);if(this.chan)this.chan.close();this.chan=null;MQ.close();},
- send(o){if(this.chan)this.chan.postMessage({...o,src:this.id});},
+ stop(){clearInterval(this.timer);if(this.chan)this.chan.close();this.chan=null;MQ.close();},
  state(){const s=G.self;if(!s)return;
    const p={t:'s',id:this.id,name:user?user.name:'?',x:s.x,y:s.y,tool:s.tool,color:s.color,skin:skin,hat:hat};
-   this.send(p);MQ.publish(p);},
+   if(this.chan)this.chan.postMessage({...p,src:this.id});
+   MQ.publish(p);},
  recv(p){if(p.src===this.id)return;
    if(p.t==='s')upsert(p.src,p);
-   if(p.t==='c')pushChat(p.n,p.m);
-   if(p.t==='hi')this.state();
-   if(p.t==='bye')delete G.remotes[p.src];},
- http(){const s=G.self;if(!s)return;
-   fetch(settings.serverUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:this.id,name:user?user.name:'?',x:s.x,y:s.y,tool:s.tool,color:s.color,skin:skin,hat:hat})})
-   .then(r=>r.json()).then(list=>{(list||[]).forEach(p=>{if(p.id&&p.id!==this.id)upsert(p.id,p);});}).catch(()=>{});}};
+   if(p.t==='c')pushChat(p.n,p.m);},
+};
 function upsert(id,p){const r=G.remotes[id]||(G.remotes[id]={x:p.x,y:p.y,tx:p.x,ty:p.y});r.tx=p.x;r.ty=p.y;r.name=p.name;r.tool=p.tool||1;r.color=p.color||'#1b6ae2';r.skin=p.skin||'red';r.hat=p.hat||'none';r.last=performance.now();}
-function chatSend(m){pushChat(user?user.name:'я',m);Net.send({t:'c',n:user?user.name:'я',m});MQ.publish({t:'c',id:Net.id,n:user?user.name:'я',m});}
+function chatSend(m){pushChat(user?user.name:'я',m);
+  const msg={t:'c',id:Net.id,n:user?user.name:'я',m};
+  if(Net.chan)Net.chan.postMessage({...msg,src:Net.id});
+  MQ.publish(msg);}
 
 /* боты */
 function makeBot(n,c,tl){return{name:n,x:G.spawnX+(Math.random()*300-150),y:G.spawnY-140,vx:0,vy:0,hw:17,hh:42,onGround:false,air:0,dropT:0,coyote:0,jbuf:0,face:1,tool:tl||(1+Math.floor(Math.random()*5)),color:c,hp:100,timer:0,dir:0,cd:0,build:0,wantJump:false};}
@@ -561,7 +566,7 @@ const ANY_EX='// ЭниЯзык — твой скрипт-предмет ✨ (к
 const JS_EX='// JavaScript\nfunction onUse(x,y,api){\n  api.explode(x,y,2);\n  api.particles(x,y,25,"#ffd23e");\n}\nfunction onUpdate(dt,api){}';
 const LESSONS=[
  {n:'Урок 1 — Привет',t:'Команда чат "текст" пишет в чат. Событие клик: срабатывает при ударе инструментом ✨ (клавиша 6).',c:'клик: чат "Привет, Эни Блок!"'},
- {n:'Урок 2 — Взрыв и частицы',t:'взрыв R — взрыв радиусом R блоков в точке клика. частицы N цвет — салют (цвета: красный, жёлтый, зелёный, синий, белый, фиолетовый, оранжевый или #код).',c:'клик: взрыв 2\nклик: частицы 30 оранжевый'},
+ {n:'Урок 2 — Взрыв и частицы',t:'взрыв R — взрыв радиусом R блоков в точке клика. частицы N цвет — салют.',c:'клик: взрыв 2\nклик: частицы 30 оранжевый'},
  {n:'Урок 3 — Стройка',t:'поставь DX DY блок — ставит блок со смещением от точки клика. Блоки: земля, камень, дерево, кирпич, стекло, платформа, ящик, лава.',c:'клик: поставь 0 0 кирпич\nклик: поставь 1 0 кирпич\nклик: поставь 0 -1 кирпич'},
  {n:'Урок 4 — Ломай',t:'ломай DX DY — ломает блок со смещением от клика.',c:'клик: ломай 0 0'},
  {n:'Урок 5 — Ракета',t:'ракета VX VY — запускает ракету со скоростью VX,VY (умножается на 10).',c:'клик: ракета 5 -3'},
@@ -640,7 +645,11 @@ function loop(ts){if(!G.running)return;const dt=Math.min(.033,(ts-last)/1000||.0
   for(let i=G.parts.length-1;i>=0;i--){const p=G.parts[i];p.vy+=900*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)G.parts.splice(i,1);}
   if(G.script&&G.script.onUpdate){try{G.script.onUpdate(dt,makeApi());}catch(e){}}
   Object.keys(G.remotes).forEach(k=>{if(performance.now()-G.remotes[k].last>4000)delete G.remotes[k];});
-  if(G.net)$('#hudOnline').textContent='🌐 '+(1+Object.keys(G.remotes).length);
+  if(G.net){
+    if(G.t>5&&G.bots.length===0&&Object.keys(G.remotes).length===0){
+      G.bots.push(makeBot('Бот Макс','#1b6ae2',1),makeBot('Бот Лея','#1bbf4b',4));
+      toast('Никого нет в комнате — добавлены боты 🤖');}
+    $('#hudOnline').textContent='🌐 '+(1+Object.keys(G.remotes).length);}
   draw();requestAnimationFrame(loop);}
 
 /* ============ СТАРТ ============ */
@@ -658,8 +667,8 @@ function startGame(opts={}){
   buildToolBar();updCoins();
   $('#chatIn').classList.toggle('hidden',!G.net);
   $('#hudOnline').classList.toggle('hidden',!G.net);
-  if(G.net){Net.start();toast('🌐 Онлайн: вкладки + устройства в комнате «'+(settings.room||'main')+'»');}
-  if(COARSE)goFS(); // на телефоне — сразу во весь экран
+  if(G.net){$('#hudOnline').textContent='🌐⏳';Net.start();}
+  if(COARSE)goFS();
   show('game');last=performance.now();requestAnimationFrame(loop);}
 function stopGame(){G.running=false;Net.stop();show('menu');}
 $('#btnBack').onclick=stopGame;
@@ -818,7 +827,53 @@ function buildExpo(){const c=$('#exCards');c.innerHTML='';
     d.querySelector('button').onclick=()=>startGame({project:p,mode:'sandbox'});
     c.appendChild(d);});}
 
-/* ресайз визуального вьюпорта (панели браузера на телефоне) */
+/* ============ СЧЁТЧИК ПОСЕТИТЕЛЕЙ (РЕАЛТАЙМ) ============ */
+const Presence={id:Math.random().toString(36).slice(2,8),ws:null,users:new Set(),timer:null,
+ start(){
+  this.users.add(this.id);
+  const tryConnect=(i)=>{
+   if(i>=3)return;
+   const urls=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'];
+   try{
+    const ws=new WebSocket(urls[i],['mqtt']);ws.binaryType='arraybuffer';
+    ws.onopen=()=>{
+     const id='pres_'+this.id;
+     const pkt=(t,b)=>new Uint8Array([t,...(()=>{const o=[];let n=b.length;do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;o.push(d);}while(n>0);return o;})(),...b]);
+     const str=s=>{const b=[...new TextEncoder().encode(s)];return[b.length>>8,b.length&255,...b];};
+     ws.send(pkt(0x10,[0,4,77,81,84,84,4,2,0,60,...str(id)]));
+    };
+    ws.onmessage=e=>{
+     const d=new Uint8Array(e.data);const t=d[0]>>4;let i=1,m=1,v=0;
+     for(;;){const b=d[i++];v+=(b&127)*m;m*=128;if(!(b&128))break;}
+     if(t===2){ // CONNACK
+      const topic='eniblock_presence';
+      const sub=pkt(0x82,[0,1,...str(topic),0]);ws.send(sub);
+      this.ws=ws;
+      this.timer=setInterval(()=>{
+       const msg=JSON.stringify({id:this.id,t:Date.now()});
+       const p=[...new TextEncoder().encode(msg)];
+       const pub=pkt(0x30,[...str(topic),...p]);
+       try{ws.send(pub);}catch(e){}
+       // cleanup old
+       const now=Date.now();
+       for(const u of this.users){if(now-u.t>5000)this.users.delete(u);}
+       $('#onlineCount').textContent='👥 Онлайн: '+this.users.size;
+      },2000);
+     }
+     if(t===3){ // PUBLISH
+      const tl=(d[i]<<8)|d[i+1];
+      const payload=JSON.parse(new TextDecoder().decode(d.slice(i+2+tl)));
+      if(payload&&payload.id){this.users.add({id:payload.id,t:Date.now()});$('#onlineCount').textContent='👥 Онлайн: '+this.users.size;}
+     }
+    };
+    ws.onclose=()=>{if(!this.ws)tryConnect(i+1);};
+    ws.onerror=()=>{};
+   }catch(e){tryConnect(i+1);}
+  };
+  tryConnect(0);
+ }};
+Presence.start();
+
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>{document.body.style.height=visualViewport.height+'px';});
 updCoins();drawPrev();
 </script>
