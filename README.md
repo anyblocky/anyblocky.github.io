@@ -27,24 +27,14 @@
   .mBtns{display:flex;flex-direction:column;gap:9px;width:300px;max-width:92vw}
   #userChip{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;display:flex;gap:8px;align-items:center;background:#1a2236;padding:8px 12px;border-radius:30px}
   #coinChip{position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#1a2236;padding:8px 14px;border-radius:30px;font-weight:700;color:#ffd23e}
-  #onlineCount{position:absolute;top:calc(60px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#2b3650;padding:6px 12px;border-radius:20px;font-size:13px;color:#7fd4ff}
   #setBtn{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px}
-  @media (max-height:700px){
-    .logoImg{width:60px;height:60px}
-    .charPrev{width:105px;height:120px}
-    #menu h1{font-size:30px}
-    .mBtns{gap:6px}
-    .mBtns button{padding:9px 14px}
-    #menu{gap:8px}
-  }
+  @media (max-height:700px){.logoImg{width:60px;height:60px}.charPrev{width:105px;height:120px}#menu h1{font-size:30px}.mBtns{gap:6px}.mBtns button{padding:9px 14px}#menu{gap:8px}}
   #game{background:#87ceeb}
   #cv{flex:1;width:100%;height:100%;display:block;touch-action:none}
   #gameBanner{position:absolute;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);height:46px;pointer-events:none;opacity:.95;z-index:5}
   #topBar{position:absolute;top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:8px;align-items:center;pointer-events:none}
   #topBar>*{pointer-events:auto}
-  #chatIn{margin-left:auto}
-  #hudCoins,#hudOnline{background:#202124aa;color:#ffd23e;font-weight:700;padding:8px 12px;border-radius:12px}
-  #hudOnline{color:#7fd4ff}
+  #hudCoins{background:#202124aa;color:#ffd23e;font-weight:700;padding:8px 12px;border-radius:12px}
   #chatBox{position:absolute;left:10px;top:calc(60px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:2px;pointer-events:none;font-size:14px;text-shadow:0 1px 2px #000}
   #toolBar{position:absolute;bottom:calc(8px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:6px}
   #toolBar button{width:52px;height:52px;font-size:22px;padding:0;position:relative}
@@ -58,7 +48,7 @@
   #guiOverlay *{pointer-events:auto}
   #hint{position:absolute;bottom:calc(66px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:12px;opacity:.75;pointer-events:none;text-shadow:0 1px 2px #000}
   body.coarse #hint{display:none}
-  #studio,#shop,#expo{padding:12px;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(12px + env(safe-area-inset-bottom));gap:10px;overflow:auto}
+  #studio,#shop,#expo,#pass,#quests{padding:12px;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(12px + env(safe-area-inset-bottom));gap:10px;overflow:auto}
   .tabs{display:flex;gap:6px;flex-wrap:wrap}
   .tabs button.sel{background:#ffd23e;color:#202124}
   .panel{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
@@ -77,6 +67,8 @@
   .thumb{width:100%;height:110px;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0f1420}
   .thumb img,.thumb canvas{max-width:100%;max-height:100%}
   .secTitle{margin-top:6px;font-size:18px}
+  .xpBar{height:14px;background:#0f1420;border-radius:8px;overflow:hidden;flex:1}
+  .xpBar div{height:100%;background:linear-gradient(90deg,#ffd23e,#ff9040)}
   .modal{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:50}
   .mCard{background:#fff;color:#202124;border-radius:16px;padding:26px;width:340px;max-width:92vw;display:flex;flex-direction:column;gap:14px;max-height:92dvh;overflow:auto}
   .gLogo{font-size:26px;font-weight:700}
@@ -90,15 +82,15 @@
 <div id="menu" class="screen">
   <div id="userChip" class="hidden"><span id="uName"></span><button id="logout">Выйти</button></div>
   <div id="coinChip">🪙 0</div>
-  <div id="onlineCount">👥 Онлайн: 1</div>
   <button id="setBtn">⚙ Настройки</button>
   <img class="logoImg" src="img/logo.png" alt="Эни Блок" onerror="this.style.display='none'">
   <canvas class="charPrev" id="prevCv" width="150" height="170"></canvas>
   <h1>ЭНИ <b>БЛОК</b></h1>
   <div class="mBtns">
-    <button class="primary" id="btnPlay">⚔ Играть — строительная сражалка</button>
+    <button class="primary" id="btnPlay">⚔ Играть — сражалка с ботами</button>
+    <button id="btnQuests">🏃 Квесты-паркур</button>
+    <button id="btnPass">🎫 Боевой пропуск</button>
     <button id="btnSand">🧱 Песочница</button>
-    <button id="btnOnline">🌐 Онлайн (без сервера)</button>
     <button id="btnShop">🛍 Каталог и кастомизация</button>
     <button id="btnStudio">🛠 Студия</button>
     <button id="btnExpo">🏆 Выставка игр</button>
@@ -112,11 +104,9 @@
     <button id="btnBack">← Меню</button>
     <button id="btnFS" title="Во весь экран">⛶</button>
     <span id="hudCoins">🪙 0</span>
-    <span id="hudOnline" class="hidden">🌐 1</span>
-    <input id="chatIn" class="hidden" placeholder="чат Enter…" style="width:150px">
   </div>
   <div id="chatBox"></div>
-  <div id="hint">A/D — движение · Пробел — прыжок · S — слэм · 1-6 — инструменты · ЛКМ (держать) — использовать · ПКМ (держать) — ломать</div>
+  <div id="hint">A/D — движение · Пробел — прыжок · S — слэм · 1-6 — инструменты · ЛКМ (держать) · ПКМ (держать) — ломать · В паркуре: доберись до ⚙!</div>
   <div id="toolBar"></div>
   <div id="touch">
     <div class="grp"><button data-action="left">◀</button><button data-action="right">▶</button></div>
@@ -125,13 +115,28 @@
   <div id="guiOverlay"></div>
 </div>
 
+<div id="pass" class="screen hidden">
+  <div class="row"><button id="psBack">← Меню</button><b>🎫 БОЕВОЙ ПРОПУСК</b><span id="passXp" style="color:#ffd23e;font-weight:700"></span></div>
+  <div class="row" style="font-size:13px;opacity:.8">⭐ даются за убийства ботов (+10) и квесты (+30). Вещи открываются автоматически!</div>
+  <div class="cards" id="passCards"></div>
+</div>
+
+<div id="quests" class="screen hidden">
+  <div class="row"><button id="qBack">← Меню</button><b>🏃 КВЕСТЫ-ПАРКУР</b><span style="font-size:12px;opacity:.7">стимпанк-вещи за прохождения</span></div>
+  <div class="cards" id="questCards"></div>
+</div>
+
 <div id="shop" class="screen hidden">
   <div class="row"><button id="shBack">← Меню</button><img class="logoSm" src="img/logo.png" onerror="this.style.display='none'"><b>🛍 КАТАЛОГ</b><span id="shCoins" style="color:#ffd23e;font-weight:700"></span></div>
-  <div style="font-size:13px;opacity:.8">Эникойны 🪙 даются за убийства в сражалке. Футболки и шапки — ваши фото.</div>
-  <div class="secTitle">👕 Футболки</div>
+  <div style="font-size:13px;opacity:.8">Эникойны 🪙 — за убийства. Стимпанк-вещи (⚙) — в квестах и пропуске.</div>
+  <div class="secTitle">👕 Футболки и костюмы</div>
   <div class="cards" id="shopShirts"></div>
   <div class="secTitle">🎩 Шапки</div>
   <div class="cards" id="shopHats"></div>
+  <div class="secTitle">👓 Очки</div>
+  <div class="cards" id="shopGlasses"></div>
+  <div class="secTitle">😊 Лица</div>
+  <div class="cards" id="shopFaces"></div>
 </div>
 
 <div id="studio" class="screen hidden">
@@ -161,9 +166,7 @@
     <p id="langHelp" style="font-size:13px;opacity:.8">ЭниЯзык: события <code>клик:</code> и <code>тик:</code>, команды: взрыв R · частицы N цвет · поставь DX DY блок · ломай DX DY · ракета VX VY · гравитация V · чат "текст" · прыжок · если близко N: …</p>
     <textarea id="scrTxt" style="flex:1" spellcheck="false"></textarea>
   </div>
-  <div class="panel hidden" id="tab-les">
-    <div class="cards" id="lesCards"></div>
-  </div>
+  <div class="panel hidden" id="tab-les"><div class="cards" id="lesCards"></div></div>
   <div class="panel hidden" id="tab-css">
     <div class="row"><select id="cssBlock"></select><button id="cssApply">Применить к игре</button></div>
     <textarea id="cssTxt" style="height:140px" spellcheck="false">background:linear-gradient(#6fd35a,#8a5a2b);
@@ -199,7 +202,6 @@ border-radius:4px;</textarea>
 <div id="settings" class="modal hidden">
   <div class="mCard">
     <b>⚙ Настройки</b>
-    <label style="font-size:13px">Комната онлайн:<input id="setRoom" placeholder="main"></label>
     <label style="font-size:13px">Google Client ID:<input id="setGid" placeholder="xxxx.apps.googleusercontent.com"></label>
     <button class="primary" id="setSave">Сохранить</button>
     <button id="setClose" style="background:#f1f3f4;color:#202124">Закрыть</button>
@@ -212,17 +214,22 @@ border-radius:4px;</textarea>
 'use strict';
 const $=s=>document.querySelector(s);
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let settings=store.get('bb_set',{gid:'',room:'main'});
+let settings=store.get('bb_set',{gid:''});
 let user=store.get('bb_user',null);
 let coins=store.get('bb_coins',0);
+let xp=store.get('bb_xp',0);
 let skin=store.get('bb_skin','red');
 let hat=store.get('bb_hat','none');
+let gls=store.get('bb_gls','none');
+let fc=store.get('bb_fc','none');
 let owned=store.get('bb_owned',['red']);
 let ownedH=store.get('bb_ownedH',['none']);
+let ownedG=store.get('bb_ownedG',['none']);
+let ownedF=store.get('bb_ownedF',['none']);
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2600);}
 const COARSE=matchMedia('(pointer:coarse)').matches;
 if(COARSE)document.body.classList.add('coarse');
-function show(id){['menu','game','studio','expo','shop'].forEach(s=>$('#'+s).classList.toggle('hidden',s!==id));}
+function show(id){['menu','game','studio','expo','shop','pass','quests'].forEach(s=>$('#'+s).classList.toggle('hidden',s!==id));}
 function updCoins(){$('#coinChip').textContent='🪙 '+coins;$('#hudCoins').textContent='🪙 '+coins;$('#shCoins').textContent='🪙 '+coins;}
 function addCoins(n){coins+=n;store.set('bb_coins',coins);updCoins();toast('+'+n+' эникойнов 🪙');}
 function goFS(){const el=document.documentElement;
@@ -233,24 +240,40 @@ function goFS(){const el=document.documentElement;
   }catch(e){}}
 $('#btnFS').onclick=goFS;
 
-/* ============ ВАШИ ФОТО ============ */
+/* ============ ВАШИ ФОТО: вещи ============ */
 const SHIRTS=[
- {id:'red',n:'Классическая красная',price:0,file:null,col:'#e21b1b'},
- {id:'pink',n:'Розовая',price:50,file:'shirt1.png',col:'#e01866'},
- {id:'white',n:'Белая',price:80,file:'shirt2.png',col:'#f7f7f7'},
- {id:'blue',n:'Синяя',price:100,file:'shirt3.png',col:'#2196f3'},
- {id:'burg',n:'Бордовая',price:120,file:'shirt4.png',col:'#8f0322'},
- {id:'green',n:'Зелёная',price:150,file:'shirt5.png',col:'#45d155'}
+ {id:'red',n:'Классическая красная',price:0,file:null,col:'#e21b1b',kind:'shirt'},
+ {id:'pink',n:'Розовая',price:50,file:'shirt1.png',col:'#e01866',kind:'shirt'},
+ {id:'white',n:'Белая',price:80,file:'shirt2.png',col:'#f7f7f7',kind:'shirt'},
+ {id:'blue',n:'Синяя',price:100,file:'shirt3.png',col:'#2196f3',kind:'shirt'},
+ {id:'burg',n:'Бордовая',price:120,file:'shirt4.png',col:'#8f0322',kind:'shirt'},
+ {id:'green',n:'Зелёная',price:150,file:'shirt5.png',col:'#45d155',kind:'shirt'},
+ {id:'sp_tie',n:'⚙ Костюм с галстуком',price:0,file:'shirt_sp.png',col:'#7a4a1f',kind:'shirt',sp:true}
 ];
 const HATS=[
- {id:'none',n:'Без шапки',price:0,file:null,src:null,w:0,dx:0,dy:0},
- {id:'hammer',n:'Шапка-молоток',price:200,file:'hat1.png',src:[160,265,225,250],w:36,dx:8,dy:-16},
- {id:'box',n:'Коробка со звездой',price:250,file:'hat2.png',src:[190,255,185,95],w:48,dx:0,dy:-12},
- {id:'cap',n:'Красная кепка',price:150,file:'hat3.png',src:[150,460,230,115],w:42,dx:3,dy:-10},
- {id:'topp',n:'Цилиндр (фиолет. лента)',price:300,file:'hat4.png',src:[125,300,275,175],w:42,dx:0,dy:-12},
- {id:'topb',n:'Цилиндр (бордовая лента)',price:300,file:'hat5.png',src:[125,300,275,175],w:42,dx:0,dy:-12}
+ {id:'none',n:'Без шапки',price:0,file:null,src:null,w:0,dx:0,dy:0,kind:'hat'},
+ {id:'hammer',n:'Шапка-молоток',price:200,file:'hat1.png',src:[160,265,225,250],w:36,dx:8,dy:-16,kind:'hat'},
+ {id:'box',n:'Коробка со звездой',price:250,file:'hat2.png',src:[190,255,185,95],w:48,dx:0,dy:-12,kind:'hat'},
+ {id:'cap',n:'Красная кепка',price:150,file:'hat3.png',src:[150,460,230,115],w:42,dx:3,dy:-10,kind:'hat'},
+ {id:'topp',n:'Цилиндр (фиолет. лента)',price:300,file:'hat4.png',src:[125,300,275,175],w:42,dx:0,dy:-12,kind:'hat'},
+ {id:'topb',n:'Цилиндр (бордовая лента)',price:300,file:'hat5.png',src:[125,300,275,175],w:42,dx:0,dy:-12,kind:'hat'},
+ {id:'sp_beret',n:'⚙ Берет инженера',price:0,file:'sp_beret.png',src:[140,265,220,125],w:40,dx:0,dy:-14,kind:'hat',sp:true},
+ {id:'sp_gearhat',n:'⚙ Котелок с шестерёнкой',price:0,file:'sp_gearhat.png',src:[70,260,275,190],w:44,dx:0,dy:-14,kind:'hat',sp:true}
 ];
-const AS={tool:{},shirt:{},hat:{}};
+const GLASSES=[
+ {id:'g_yellow',n:'Жёлтые очки',price:100,file:'gl_yellow.png',src:[115,295,240,110],w:42,dx:0,dy:-4,kind:'glasses'},
+ {id:'sp_grid',n:'⚙ Очки с сеткой',price:0,file:'sp_grid.png',src:[115,295,240,110],w:42,dx:0,dy:-4,kind:'glasses',sp:true},
+ {id:'sp_goggles',n:'⚙ Гогглы с индикаторами',price:0,file:'sp_goggles.png',src:[195,360,180,105],w:40,dx:0,dy:-4,kind:'glasses',sp:true}
+];
+const FACES=[
+ {id:'f_wink',n:'Подмигивание',price:80,file:'face1.png',kind:'face'},
+ {id:'f_sly',n:'Хитрое лицо',price:90,file:'face2.png',kind:'face'},
+ {id:'f_smile',n:'Улыбка',price:60,file:'face3.png',kind:'face'},
+ {id:'f_lol',n:'Весельчак',price:120,file:'face4.png',kind:'face'}
+];
+const ITEM_INDEX={};
+[...SHIRTS,...HATS,...GLASSES,...FACES].forEach(i=>ITEM_INDEX[i.id]=i);
+const AS={tool:{},shirt:{},hat:{},glasses:{},face:{}};
 function loadImg(src){return new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src;});}
 function chroma(img){const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
   const x=c.getContext('2d');x.drawImage(img,0,0);
@@ -264,6 +287,8 @@ function chroma(img){const c=document.createElement('canvas');c.width=img.width;
   t.forEach((im,i)=>{if(im)AS.tool[i+1]=chroma(im);});
   for(const s of SHIRTS){if(s.file){const im=await loadImg('img/'+s.file);if(im)AS.shirt[s.id]=im;}}
   for(const h of HATS){if(h.file){const im=await loadImg('img/'+h.file);if(im)AS.hat[h.id]=chroma(im);}}
+  for(const g of GLASSES){if(g.file){const im=await loadImg('img/'+g.file);if(im)AS.glasses[g.id]=chroma(im);}}
+  for(const f of FACES){if(f.file){const im=await loadImg('img/'+f.file);if(im)AS.face[f.id]=chroma(im);}}
   if(!AS.tool[1])toast('⚠ Фото не загрузились: положите файлы в папку img');
   drawPrev();buildShop();
 })();
@@ -314,8 +339,90 @@ function genBattle(){
   for(let i=0;i<12;i++){const cx=8+Math.floor(Math.random()*(W-16));world[(H-8)*W+cx]=7;}
   for(let x=70;x<74;x++)world[(H-7)*W+x]=8;
 }
+function genParkour(diff){
+  world=new Uint8Array(W*H);
+  for(let x=0;x<W;x++){world[(H-1)*W+x]=9;world[(H-2)*W+x]=8;world[(H-3)*W+x]=8;}
+  for(let x=2;x<11;x++)world[(H-6)*W+x]=2;
+  let px=8,py=H-6;
+  const steps=12+diff*3;
+  for(let i=0;i<steps;i++){
+    px+=3+Math.floor(Math.random()*3);
+    py-=2+(Math.random()<.35?1:0);
+    if(px>W-8)px=W-8;if(py<10)py=10;
+    const len=Math.max(2,4-Math.floor(diff/2));
+    for(let x=px;x<px+len;x++)if(inB(x,py))world[py*W+x]=6;
+  }
+  G.goalX=px*T+16;G.goalY=py*T-46;
+  G.spawnX=6*T;G.spawnY=(H-6)*T-60;
+  return;
+}
 function encMap(w){const a=[];let c=w[0],n=1;for(let i=1;i<w.length;i++){if(w[i]===c&&n<9999)n++;else{a.push(c,n);c=w[i];n=1;}}a.push(c,n);return a;}
 function decMap(a){const w=new Uint8Array(W*H);let i=0,k=0;while(k<a.length&&i<w.length){const c=a[k],n=a[k+1];for(let j=0;j<n&&i<w.length;j++)w[i++]=c;k+=2;}return w;}
+
+/* ============ ПРОГРЕСС: пропуск и квесты ============ */
+const TIERS=[
+ {xp:0,r:{t:'coins',n:30}},
+ {xp:30,r:{t:'coins',n:50}},
+ {xp:70,r:{t:'item',id:'sp_beret'}},
+ {xp:120,r:{t:'coins',n:70}},
+ {xp:180,r:{t:'item',id:'sp_grid'}},
+ {xp:250,r:{t:'item',id:'f_sly'}},
+ {xp:330,r:{t:'item',id:'sp_gearhat'}},
+ {xp:420,r:{t:'coins',n:100}},
+ {xp:520,r:{t:'item',id:'sp_goggles'}},
+ {xp:650,r:{t:'item',id:'sp_tie'}}
+];
+const QUESTS=[
+ {id:'q1',n:'Первые шестерёнки',d:'Доберись до ⚙ над лавой!',diff:0,r:{t:'item',id:'sp_beret'}},
+ {id:'q2',n:'Прыжки над лавой',d:'Выше и дальше!',diff:1,r:{t:'item',id:'sp_grid'}},
+ {id:'q3',n:'Восхождение инженера',d:'Узкие платформы!',diff:2,r:{t:'item',id:'sp_gearhat'}},
+ {id:'q4',n:'Пар над котлом',d:'Очень узкие платформы!',diff:3,r:{t:'item',id:'sp_goggles'}},
+ {id:'q5',n:'Вершина Эни Блока',d:'Финальное испытание!',diff:4,r:{t:'item',id:'sp_tie'}}
+];
+function ownedArrFor(kind){return kind==='shirt'?owned:kind==='hat'?ownedH:kind==='glasses'?ownedG:ownedF;}
+function ownedKeyFor(kind){return kind==='shirt'?'bb_owned':kind==='hat'?'bb_ownedH':kind==='glasses'?'bb_ownedG':'bb_ownedF';}
+function giveReward(r,silent){
+  if(r.t==='coins'){addCoins(r.n);return;}
+  const it=ITEM_INDEX[r.id];if(!it)return;
+  const arr=ownedArrFor(it.kind);
+  if(arr.includes(r.id)){if(!silent)addCoins(25);}
+  else{arr.push(r.id);store.set(ownedKeyFor(it.kind),arr);toast('🎁 Получено: '+it.n+'!');buildShop();}}
+function addXp(n){xp+=n;store.set('bb_xp',xp);checkPass();}
+function checkPass(){
+  const claimed=store.get('bb_pass',[]);let got=false;
+  TIERS.forEach((t,i)=>{if(xp>=t.xp&&!claimed.includes(i)){claimed.push(i);got=true;
+    toast('🎫 Уровень '+(i+1)+'!');giveReward(t.r,true);if(t.r.t==='item')toast('🎁 Пропуск: '+ITEM_INDEX[t.r.id].n+'!');}});
+  if(got){store.set('bb_pass',claimed);buildShop();}
+}
+function buildPass(){
+  $('#passXp').textContent='⭐ '+xp;
+  const claimed=store.get('bb_pass',[]);
+  const w=$('#passCards');w.innerHTML='';
+  TIERS.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='card';
+    const done=claimed.includes(i),can=xp>=t.xp;
+    const rn=t.r.t==='coins'?(t.n+' 🪙'):ITEM_INDEX[t.r.id].n;
+    d.innerHTML='<h3>Уровень '+(i+1)+'</h3><div style="font-size:13px;opacity:.8">нужно ⭐ '+t.xp+'</div>'+
+      '<div style="font-size:15px;font-weight:700">'+(done?'✅ ':can?'🟡 ':'🔒 ')+rn+'</div>'+
+      '<div class="xpBar"><div style="width:'+Math.min(100,Math.round(xp/t.xp*100))+'%"></div></div>';
+    w.appendChild(d);});
+}
+function buildQuests(){
+  const done=store.get('bb_qdone',[]);
+  const w=$('#questCards');w.innerHTML='';
+  QUESTS.forEach(q=>{
+    const d=document.createElement('div');d.className='card wide';
+    const isD=done.includes(q.id);
+    d.innerHTML='<h3>'+q.n+' '+(isD?'✅':'')+'</h3><div style="font-size:13px;opacity:.85">'+q.d+'</div>'+
+      '<div style="font-size:14px;font-weight:700;color:#ffd23e">награда: '+ITEM_INDEX[q.r.id].n+' +30⭐</div>';
+    const b=document.createElement('button');b.className='primary';b.textContent=isD?'▶ Ещё раз':'▶ Играть';
+    b.onclick=()=>startGame({mode:'parkour',quest:q});
+    d.appendChild(b);w.appendChild(d);});
+}
+$('#btnPass').onclick=()=>{show('pass');buildPass();};
+$('#psBack').onclick=()=>show('menu');
+$('#btnQuests').onclick=()=>{show('quests');buildQuests();};
+$('#qBack').onclick=()=>show('menu');
 
 /* ============ GOOGLE ============ */
 let authCb=null;
@@ -332,9 +439,9 @@ function updChip(){if(user){$('#userChip').classList.remove('hidden');$('#uName'
 $('#logout').onclick=()=>{user=null;localStorage.removeItem('bb_user');updChip();};
 updChip();
 if(settings.gid){const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';document.head.appendChild(s);}
-$('#setBtn').onclick=()=>{$('#setGid').value=settings.gid||'';$('#setRoom').value=settings.room||'main';$('#settings').classList.remove('hidden');};
+$('#setBtn').onclick=()=>{$('#setGid').value=settings.gid||'';$('#settings').classList.remove('hidden');};
 $('#setClose').onclick=()=>$('#settings').classList.add('hidden');
-$('#setSave').onclick=()=>{settings={gid:$('#setGid').value.trim(),room:$('#setRoom').value.trim()||'main'};store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
+$('#setSave').onclick=()=>{settings={gid:$('#setGid').value.trim()};store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
 
 /* ============ ИНСТРУМЕНТЫ ============ */
 const TOOLS=[
@@ -348,7 +455,7 @@ function toolList(){const l=TOOLS.slice();if(G.script&&G.script.onUse)l.push({id
 
 /* ============ ДВИЖОК ============ */
 const KILL_COINS=10;
-const G={running:false,mode:'battle',gravity:1600,t:0,shake:0,inp:{left:0,right:0,down:0,jump:0},self:null,bots:[],remotes:{},rockets:[],parts:[],chat:[],script:null,models:{},copyType:4,cd:0,mouse:null,mouseHeld:false,mouseBtn:0,brkCd:0,net:false,spawnX:0,spawnY:0};
+const G={running:false,mode:'battle',gravity:1600,t:0,shake:0,inp:{left:0,right:0,down:0,jump:0},self:null,bots:[],rockets:[],parts:[],chat:[],script:null,models:{},copyType:4,cd:0,mouse:null,mouseHeld:false,mouseBtn:0,brkCd:0,spawnX:0,spawnY:0,goalX:null,goalY:null,quest:null};
 const cv=$('#cv'),ctx=cv.getContext('2d');
 function makeApi(){return{
   place:(x,y,t)=>{if(inB(x,y)&&world[y*W+x]!==9)world[y*W+x]=t|0;},
@@ -360,7 +467,7 @@ function makeApi(){return{
   setGravity:v=>{G.gravity=+v||1600;},
   jump:()=>{if(G.self){G.self.vy=-640;G.self.onGround=false;}},
   players:()=>[G.self,...G.bots].map(p=>({name:p.name,x:p.x,y:p.y})),
-  others:()=>[...G.bots,...Object.values(G.remotes)].map(p=>({name:p.name,x:p.x,y:p.y})),
+  others:()=>G.bots.map(p=>({name:p.name,x:p.x,y:p.y})),
   time:()=>G.t};}
 function spawnParts(x,y,n,c){for(let i=0;i<n;i++)G.parts.push({x,y,vx:(Math.random()-.5)*500,vy:(Math.random()-.7)*500,life:.6+Math.random()*.5,c});}
 function pushChat(n,m){G.chat.push({n,m,t:G.t});if(G.chat.length>6)G.chat.shift();renderChat();}
@@ -369,7 +476,8 @@ function hurt(e,amt,src){if(G.mode!=='battle'||!e)return;e.hp=(e.hp==null?100:e.
   if(e.hp<=0)death(e,src);}
 function death(e,src){spawnParts(e.x,e.y,26,'#ff5722');
   if(e===G.self)pushChat('☠',(src&&src!=='self'?src+' убил вас':'Вы погибли'));
-  else{pushChat('☠',e.name+' погиб'+(src?' ('+src+')':''));if(src==='self')addCoins(KILL_COINS);}
+  else{pushChat('☠',e.name+' погиб'+(src?' ('+src+')':''));
+    if(src==='self'){addCoins(KILL_COINS);addXp(10);}}
   e.hp=100;e.x=G.spawnX+(e===G.self?0:(Math.random()*160-80));e.y=G.spawnY-120;e.vx=e.vy=0;}
 function explode(x,y,r,src){
   const rt=Math.floor(r);
@@ -447,65 +555,6 @@ function useTool(wx,wy,btn){
 function actFront(a){const s=G.self,tx=Math.floor((s.x+s.face*40)/T),ty=Math.floor(s.y/T);
   if(a==='place')world[ty*W+tx]=G.copyType||4;else if(getT(tx,ty)!==9)world[ty*W+tx]=0;}
 
-/* ============ СЕТЬ: MQTT + ВКЛАДКИ (БЕЗ СЕРВЕРА) ============ */
-const MQ={ws:null,ok:false,keep:null,tryT:0,
- urls:['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'],
- connect(){this.ok=false;this.tryUrl(0);},
- tryUrl(i){
-  if(i>=this.urls.length){
-    toast('⚠ Брокеры недоступны. Онлайн между вкладками работает');
-    clearTimeout(this.tryT);this.tryT=setTimeout(()=>this.connect(),20000);return;}
-  try{
-    const ws=new WebSocket(this.urls[i],['mqtt']);ws.binaryType='arraybuffer';
-    const to=setTimeout(()=>{try{ws.close();}catch(e){}},4000);
-    ws.onopen=()=>{try{ws.send(this.encConnect());}catch(e){}};
-    ws.onmessage=e=>{clearTimeout(to);try{this.onMsg(new Uint8Array(e.data));}catch(err){}};
-    ws.onclose=()=>{clearTimeout(to);
-      if(!this.ok)this.tryUrl(i+1);
-      else{this.ok=false;clearTimeout(this.tryT);this.tryT=setTimeout(()=>this.connect(),5000);}};
-    ws.onerror=()=>{try{ws.close();}catch(e){}};
-    this.ws=ws;
-  }catch(e){this.tryUrl(i+1);}},
- str(s){const b=[...new TextEncoder().encode(s)];return[b.length>>8,b.length&255,...b];},
- rl(n){const o=[];do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;o.push(d);}while(n>0);return o;},
- pkt(t,body){return new Uint8Array([t,...this.rl(body.length),...body]);},
- encConnect(){const id='eb_'+Net.id;
-  return this.pkt(0x10,[0,4,77,81,84,84,4,2,0,60,...this.str(id)]);},
- subscribe(){const t=this.str('eniblock/'+(settings.room||'main'));this.ws.send(this.pkt(0x82,[0,1,...t,0]));},
- publish(o){if(this.ok&&this.ws&&this.ws.readyState===1){
-  const t=this.str('eniblock/'+(settings.room||'main'));
-  const p=[...new TextEncoder().encode(JSON.stringify(o))];
-  try{this.ws.send(this.pkt(0x30,[...t,...p]));}catch(e){}}},
- onMsg(d){const t=d[0]>>4;let i=1,m=1,v=0;
-  for(;;){const b=d[i++];v+=(b&127)*m;m*=128;if(!(b&128))break;}
-  const body=d.slice(i);
-  if(t===2){this.ok=true;this.subscribe();
-    clearInterval(this.keep);
-    this.keep=setInterval(()=>{if(this.ws&&this.ws.readyState===1)this.ws.send(new Uint8Array([0xC0,0]));},25000);
-    toast('🌐 Онлайн подключён! Комната «'+(settings.room||'main')+'»');}
-  else if(t===3){const tl=(body[0]<<8)|body[1];
-    let payload=null;try{payload=JSON.parse(new TextDecoder().decode(body.slice(2+tl)));}catch(e){}
-    if(payload&&payload.id)Net.recv({...payload,src:payload.id});}},
- close(){clearInterval(this.keep);clearTimeout(this.tryT);this.ok=false;if(this.ws)try{this.ws.close();}catch(e){}}};
-const Net={id:Math.random().toString(36).slice(2,8),chan:null,timer:null,
- start(){if('BroadcastChannel'in window){this.chan=new BroadcastChannel('bb_online');this.chan.onmessage=e=>this.recv(e.data);}
-   this.timer=setInterval(()=>this.state(),50); // 50ms для реалтайма
-   MQ.connect();},
- stop(){clearInterval(this.timer);if(this.chan)this.chan.close();this.chan=null;MQ.close();},
- state(){const s=G.self;if(!s)return;
-   const p={t:'s',id:this.id,name:user?user.name:'?',x:s.x,y:s.y,tool:s.tool,color:s.color,skin:skin,hat:hat};
-   if(this.chan)this.chan.postMessage({...p,src:this.id});
-   MQ.publish(p);},
- recv(p){if(p.src===this.id)return;
-   if(p.t==='s')upsert(p.src,p);
-   if(p.t==='c')pushChat(p.n,p.m);},
-};
-function upsert(id,p){const r=G.remotes[id]||(G.remotes[id]={x:p.x,y:p.y,tx:p.x,ty:p.y});r.tx=p.x;r.ty=p.y;r.name=p.name;r.tool=p.tool||1;r.color=p.color||'#1b6ae2';r.skin=p.skin||'red';r.hat=p.hat||'none';r.last=performance.now();}
-function chatSend(m){pushChat(user?user.name:'я',m);
-  const msg={t:'c',id:Net.id,n:user?user.name:'я',m};
-  if(Net.chan)Net.chan.postMessage({...msg,src:Net.id});
-  MQ.publish(msg);}
-
 /* боты */
 function makeBot(n,c,tl){return{name:n,x:G.spawnX+(Math.random()*300-150),y:G.spawnY-140,vx:0,vy:0,hw:17,hh:42,onGround:false,air:0,dropT:0,coyote:0,jbuf:0,face:1,tool:tl||(1+Math.floor(Math.random()*5)),color:c,hp:100,timer:0,dir:0,cd:0,build:0,wantJump:false};}
 function botStep(b,dt){
@@ -567,12 +616,12 @@ const JS_EX='// JavaScript\nfunction onUse(x,y,api){\n  api.explode(x,y,2);\n  a
 const LESSONS=[
  {n:'Урок 1 — Привет',t:'Команда чат "текст" пишет в чат. Событие клик: срабатывает при ударе инструментом ✨ (клавиша 6).',c:'клик: чат "Привет, Эни Блок!"'},
  {n:'Урок 2 — Взрыв и частицы',t:'взрыв R — взрыв радиусом R блоков в точке клика. частицы N цвет — салют.',c:'клик: взрыв 2\nклик: частицы 30 оранжевый'},
- {n:'Урок 3 — Стройка',t:'поставь DX DY блок — ставит блок со смещением от точки клика. Блоки: земля, камень, дерево, кирпич, стекло, платформа, ящик, лава.',c:'клик: поставь 0 0 кирпич\nклик: поставь 1 0 кирпич\nклик: поставь 0 -1 кирпич'},
+ {n:'Урок 3 — Стройка',t:'поставь DX DY блок — ставит блок со смещением от точки клика.',c:'клик: поставь 0 0 кирпич\nклик: поставь 1 0 кирпич\nклик: поставь 0 -1 кирпич'},
  {n:'Урок 4 — Ломай',t:'ломай DX DY — ломает блок со смещением от клика.',c:'клик: ломай 0 0'},
- {n:'Урок 5 — Ракета',t:'ракета VX VY — запускает ракету со скоростью VX,VY (умножается на 10).',c:'клик: ракета 5 -3'},
- {n:'Урок 6 — Тик',t:'тик: — команда выполняется каждые 0.2 секунды постоянно.',c:'тик: частицы 2 жёлтый'},
- {n:'Урок 7 — Условие',t:'если близко N: команда — сработает, если игрок/бот ближе N блоков.',c:'тик: если близко 4: взрыв 1'},
- {n:'Урок 8 — Гравитация',t:'гравитация V — меняет силу притяжения (стандарт 1600). прыжок — подбрасывает.',c:'клик: гравитация 600\nклик: прыжок'}
+ {n:'Урок 5 — Ракета',t:'ракета VX VY — запускает ракету.',c:'клик: ракета 5 -3'},
+ {n:'Урок 6 — Тик',t:'тик: — команда выполняется каждые 0.2 секунды.',c:'тик: частицы 2 жёлтый'},
+ {n:'Урок 7 — Условие',t:'если близко N: команда — сработает, если кто-то ближе N блоков.',c:'тик: если близко 4: взрыв 1'},
+ {n:'Урок 8 — Гравитация',t:'гравитация V — меняет силу притяжения. прыжок — подбрасывает.',c:'клик: гравитация 600\nклик: прыжок'}
 ];
 function compileScript(src,lang){
   if(lang==='js'){if(!src||!src.trim())return null;
@@ -582,28 +631,55 @@ function compileScript(src,lang){
 }
 
 /* ============ ПЕРСОНАЖ ============ */
-function drawHatImg(c,hx,hy,scale,e){
-  const h=HATS.find(q=>q.id===(e.hat||'none'));if(!h||!h.file||!AS.hat[h.id])return;
-  const img=AS.hat[h.id],w=h.w*scale,hh=w*h.src[3]/h.src[2];
-  c.drawImage(img,h.src[0],h.src[1],h.src[2],h.src[3],hx+h.dx*scale-w/2,hy+h.dy*scale-hh,w,hh);}
+function drawOverlay(c,img,src,hx,hy,w,scale){
+  const hh=w*src[3]/src[2];
+  c.drawImage(img,src[0],src[1],src[2],src[3],hx-w/2,hy-hh/2,w,hh);}
 function drawChar(c,x,y,e){
   const tl=Math.min(5,Math.max(1,e.tool||1));
   const spr=AS.tool[tl],shirt=AS.shirt[e.skin||'red'];
+  const face=AS.face[e.fc||'none'],glasses=AS.glasses[e.gls||'none'],hatI=AS.hat[e.hat||'none'];
+  const hatC=HATS.find(q=>q.id===(e.hat||'none'));
+  const glC=GLASSES.find(q=>q.id===(e.gls||'none'));
   if(spr){
     const sx=40,sy=250,sw=820,sh=830,k=88/sw,dw=88,dh=sh*k;
     c.save();c.translate(x,y);if((e.face||1)<0)c.scale(-1,1);
     const ox=-(402-40)*k,oy=46-dh;
     c.drawImage(spr,sx,sy,sw,sh,ox,oy,dw,dh);
     if(shirt)c.drawImage(shirt,235,565,335,515,ox+(235-sx)*k,oy+(565-sy)*k,335*k,515*k);
-    drawHatImg(c,2,-23,1,e);
-    c.restore();}
+    const hx=2,hy=-23;
+    if(face)drawOverlay(c,face,[260,250,350,350],hx,hy,40,1);
+    if(glasses&&glC)drawOverlay(c,glasses,glC.src,hx+glC.dx,hy+glC.dy,glC.w,1);
+    if(hatI&&hatC)drawOverlay(c,hatI,hatC.src,hx+hatC.dx,hy+hatC.dy-hatC.w*hatC.src[3]/hatC.src[2]/2+ (hatC.dy? 0:0),hatC.w,1),
+      (function(){})() ;
+    c.restore();
+  }else{
+    const shirtCol=(SHIRTS.find(s=>s.id===(e.skin||'red'))||SHIRTS[0]).col;
+    c.strokeStyle='#000';c.lineCap='round';
+    c.fillStyle=shirtCol;c.lineWidth=9;c.beginPath();c.rect(x-28,y-12,56,54);c.fill();c.stroke();
+    c.lineWidth=6;c.beginPath();c.arc(x+10,y+6,8,-1.6,1.6);c.stroke();c.beginPath();c.moveTo(x+15,y-2);c.lineTo(x+3,y+20);c.stroke();
+    c.fillStyle='#f6ec12';c.lineWidth=8;c.beginPath();c.arc(x,y-40,30,0,7);c.fill();c.stroke();
+    if(!face){c.lineWidth=5;c.beginPath();c.moveTo(x-15,y-34);c.lineTo(x+16,y-31);c.stroke();}
+    if(face)drawOverlay(c,face,[260,250,350,350],x,y-40,64,1);
+    if(glasses&&glC)drawOverlay(c,glasses,glC.src,x+glC.dx*1.7,(y-40)+glC.dy*1.7,glC.w*1.7,1);
+    if(hatI&&hatC)drawOverlay(c,hatI,hatC.src,x+hatC.dx*1.7,(y-40)+hatC.dy*1.7-(hatC.w*1.7*hatC.src[3]/hatC.src[2])/2,hatC.w*1.7,1);
+    const hx=x+(e.face>=0?40:-40),hy=y+8;
+    const hand=(px,py)=>{c.fillStyle='#f6ec12';c.lineWidth=7;c.beginPath();c.rect(px-11,py-11,22,22);c.fill();c.stroke();};
+    if(tl===5){hand(x-40,y-24);hand(x+40,y-24);}else hand(hx,hy);
+    if(tl===1){c.strokeStyle='#8f8f8f';c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-24);c.lineTo(hx,hy-66);c.stroke();
+      c.strokeStyle='#f6ec12';c.lineWidth=10;c.beginPath();c.moveTo(hx-19,hy-22);c.lineTo(hx+19,hy-22);c.stroke();
+      c.strokeStyle='#5a5a5a';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-16);c.lineTo(hx,hy+16);c.stroke();}
+    else if(tl===3){c.strokeStyle='#b5764c';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-18);c.lineTo(hx,hy+30);c.stroke();
+      c.fillStyle='#3f3f3f';c.fillRect(hx-24,hy-46,48,28);}
+    else if(tl===4){c.strokeStyle='#8a8a8a';c.lineWidth=26;c.beginPath();c.moveTo(hx-14,hy-26);c.lineTo(hx+16,hy-30);c.stroke();
+      c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-14);c.lineTo(hx,hy+18);c.stroke();}
+  }
   if(e.name&&!e.self){c.fillStyle='#fff';c.font='12px sans-serif';c.textAlign='center';c.fillText(e.name,x,y-78);}
   if(G.mode==='battle'&&e.hp!=null){
     c.fillStyle='#0008';c.fillRect(x-25,y-72,50,6);
     c.fillStyle=e.hp>40?'#45d155':'#ff5722';c.fillRect(x-25,y-72,50*Math.max(0,e.hp)/100,6);}
   const ht=G.t-(e.hitT||-9);if(ht>0&&ht<.2){c.fillStyle='#ff000055';c.beginPath();c.arc(x,y-20,34,0,7);c.fill();}}
 function drawPrev(){const c=$('#prevCv').getContext('2d');c.clearRect(0,0,150,170);
-  if(AS.tool[1])drawChar(c,75,112,{tool:1,face:1,skin:skin,hat:hat,self:true});}
+  if(AS.tool[1])drawChar(c,75,112,{tool:1,face:1,skin:skin,hat:hat,gls:gls,fc:fc,self:true});}
 
 /* ============ ОТРИСОВКА ============ */
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
@@ -623,9 +699,13 @@ function draw(){
   const x0=Math.floor(cx/T),x1=Math.ceil((cx+vw)/T),y0=Math.floor(cy/T),y1=Math.ceil((cy+vh)/T);
   for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){const t=getT(tx,ty);if(t)drawTile(ctx,t,tx*T-cx,ty*T-cy,G.models[t]);}
   if(G.mouse&&s.tool===3&&G.copyType){ctx.globalAlpha=.4;drawTile(ctx,G.copyType,(G.mouse.x-cx)&~31,(G.mouse.y-cy)&~31);ctx.globalAlpha=1;}
+  if(G.mode==='parkour'&&G.goalX!=null){const gx=G.goalX-cx,gy=G.goalY-cy;
+    ctx.save();ctx.translate(gx,gy);
+    ctx.fillStyle='#ffd23e';ctx.beginPath();ctx.arc(0,0,16+Math.sin(G.t*4)*2,0,7);ctx.fill();
+    ctx.strokeStyle='#7a4f22';ctx.lineWidth=4;ctx.stroke();
+    ctx.fillStyle='#7a4f22';ctx.font='16px sans-serif';ctx.textAlign='center';ctx.fillText('⚙',0,5);ctx.restore();}
   G.rockets.forEach(r=>{ctx.save();ctx.translate(r.x-cx,r.y-cy);ctx.rotate(Math.atan2(r.vy,r.vx));ctx.fillStyle='#8a8a8a';rr(ctx,-10,-4,20,8,4);ctx.fill();ctx.fillStyle='#ff5722';ctx.beginPath();ctx.arc(-12,0,4,0,7);ctx.fill();ctx.restore();});
   G.parts.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.c;ctx.fillRect(p.x-cx-2,p.y-cy-2,4,4);});ctx.globalAlpha=1;
-  Object.values(G.remotes).forEach(r=>{r.x+=(r.tx-r.x)*.3;r.y+=(r.ty-r.y)*.3;drawChar(ctx,r.x-cx,r.y-cy,r);});
   G.bots.forEach(b=>drawChar(ctx,b.x-cx,b.y-cy,b));
   drawChar(ctx,s.x-cx,s.y-cy,{...s,self:true,name:null});
 }
@@ -644,33 +724,35 @@ function loop(ts){if(!G.running)return;const dt=Math.min(.033,(ts-last)/1000||.0
     const t=tileAt(r.x,r.y);if(isSolid(t)||t===6||r.life<=0){explode(r.x,r.y,2.4,r.src);G.rockets.splice(i,1);}}
   for(let i=G.parts.length-1;i>=0;i--){const p=G.parts[i];p.vy+=900*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)G.parts.splice(i,1);}
   if(G.script&&G.script.onUpdate){try{G.script.onUpdate(dt,makeApi());}catch(e){}}
-  Object.keys(G.remotes).forEach(k=>{if(performance.now()-G.remotes[k].last>4000)delete G.remotes[k];});
-  if(G.net){
-    if(G.t>5&&G.bots.length===0&&Object.keys(G.remotes).length===0){
-      G.bots.push(makeBot('Бот Макс','#1b6ae2',1),makeBot('Бот Лея','#1bbf4b',4));
-      toast('Никого нет в комнате — добавлены боты 🤖');}
-    $('#hudOnline').textContent='🌐 '+(1+Object.keys(G.remotes).length);}
+  if(G.mode==='parkour'&&G.goalX!=null&&Math.hypot(G.self.x-G.goalX,G.self.y-G.goalY)<60)questDone();
   draw();requestAnimationFrame(loop);}
+function questDone(){const q=G.quest;if(!q)return;G.goalX=null;
+  spawnParts(G.self.x,G.self.y,60,'#ffd23e');
+  const done=store.get('bb_qdone',[]);
+  if(!done.includes(q.id)){done.push(q.id);store.set('bb_qdone',done);
+    giveReward(q.r);addXp(30);toast('🏆 Квест «'+q.n+'» выполнен!');}
+  else{addXp(10);toast('🏆 Финиш! +10⭐');}}
 
 /* ============ СТАРТ ============ */
 function startGame(opts={}){
-  G.running=true;G.t=0;G.rockets=[];G.parts=[];G.chat=[];G.remotes={};G.bots=[];G.script=null;G.models={};G.net=!!opts.net;
-  G.mode=opts.mode||'sandbox';modelCache={};
+  G.running=true;G.t=0;G.rockets=[];G.parts=[];G.chat=[];G.bots=[];G.script=null;G.models={};
+  G.mode=opts.mode||'sandbox';G.quest=opts.quest||null;G.goalX=null;G.goalY=null;modelCache={};
   if(opts.project){world=decMap(opts.project.map);
     if(opts.project.script)G.script=compileScript(opts.project.script,opts.project.scriptLang||'any');
     G.models=opts.project.models||{};
     $('#guiOverlay').innerHTML=opts.project.gui||'';bindGui($('#guiOverlay'));}
-  else{if(G.mode==='battle')genBattle();else genWorld();$('#guiOverlay').innerHTML='';}
-  G.spawnX=(W/2)*T;G.spawnY=surfaceY(W/2)-60;
-  G.self={name:user?user.name:'игрок',x:G.spawnX,y:G.spawnY,vx:0,vy:0,hw:17,hh:42,onGround:false,air:0,dropT:0,coyote:0,jbuf:0,face:1,tool:1,hp:100,color:'#e21b1b',skin:skin,hat:hat,self:true};
-  if(G.mode==='battle'&&!G.net)G.bots=[makeBot('Бот Макс','#1b6ae2',1),makeBot('Бот Лея','#1bbf4b',4),makeBot('Бот Рекс','#ff9800',1)];
+  else{
+    if(G.mode==='battle')genBattle();
+    else if(G.mode==='parkour')genParkour(opts.quest?opts.quest.diff:0);
+    else genWorld();
+    $('#guiOverlay').innerHTML='';}
+  if(G.mode!=='parkour'){G.spawnX=(W/2)*T;G.spawnY=surfaceY(W/2)-60;}
+  G.self={name:user?user.name:'игрок',x:G.spawnX,y:G.spawnY,vx:0,vy:0,hw:17,hh:42,onGround:false,air:0,dropT:0,coyote:0,jbuf:0,face:1,tool:1,hp:100,color:'#e21b1b',skin:skin,hat:hat,gls:gls,fc:fc,self:true};
+  if(G.mode==='battle')G.bots=[makeBot('Бот Макс','#1b6ae2',1),makeBot('Бот Лея','#1bbf4b',4),makeBot('Бот Рекс','#ff9800',1)];
   buildToolBar();updCoins();
-  $('#chatIn').classList.toggle('hidden',!G.net);
-  $('#hudOnline').classList.toggle('hidden',!G.net);
-  if(G.net){$('#hudOnline').textContent='🌐⏳';Net.start();}
   if(COARSE)goFS();
   show('game');last=performance.now();requestAnimationFrame(loop);}
-function stopGame(){G.running=false;Net.stop();show('menu');}
+function stopGame(){G.running=false;show('menu');}
 $('#btnBack').onclick=stopGame;
 
 /* ============ ВВОД ============ */
@@ -680,14 +762,12 @@ addEventListener('keydown',e=>{
     if(['ArrowLeft','KeyA'].includes(e.code))G.inp.left=1;
     if(['ArrowRight','KeyD'].includes(e.code))G.inp.right=1;
     if(['ArrowDown','KeyS'].includes(e.code))G.inp.down=1;
-    const m=e.code.match(/^Digit([1-6])$/);if(m&&G.self){G.self.tool=+m[1];buildToolBar();}}
-  else if(e.code==='Enter'&&!$('#chatIn').classList.contains('hidden')&&document.activeElement!==$('#chatIn'))$('#chatIn').focus();});
+    const m=e.code.match(/^Digit([1-6])$/);if(m&&G.self){G.self.tool=+m[1];buildToolBar();}}});
 addEventListener('keyup',e=>{
   if(['ArrowLeft','KeyA'].includes(e.code))G.inp.left=0;
   if(['ArrowRight','KeyD'].includes(e.code))G.inp.right=0;
   if(['ArrowDown','KeyS'].includes(e.code))G.inp.down=0;});
 addEventListener('blur',()=>{G.inp.left=0;G.inp.right=0;G.inp.down=0;G.inp.jump=0;G.mouseHeld=false;});
-$('#chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim()){chatSend(e.target.value.trim());e.target.value='';e.target.blur();}e.stopPropagation();});
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{e.preventDefault();const[cx,cy]=camXY();const r=cv.getBoundingClientRect();
   G.mouse={x:e.clientX-r.left+cx,y:e.clientY-r.top+cy};G.mouseHeld=true;G.mouseBtn=e.button;
@@ -711,39 +791,45 @@ function buildToolBar(){const tb=$('#toolBar');tb.innerHTML='';
 /* ============ МЕНЮ / КАТАЛОГ ============ */
 $('#btnPlay').onclick=()=>startGame({mode:'battle'});
 $('#btnSand').onclick=()=>startGame({mode:'sandbox'});
-$('#btnOnline').onclick=()=>requireAuth(()=>startGame({net:true,mode:'battle'}));
 $('#btnStudio').onclick=()=>{show('studio');edInit();};
 $('#btnExpo').onclick=()=>requireAuth(()=>{show('expo');buildExpo();});
 $('#btnShop').onclick=()=>{show('shop');buildShop();};
 $('#shBack').onclick=()=>{show('menu');drawPrev();};
-function buyItem(price,ownedArr,id,isHat){
-  if(coins>=price){coins-=price;store.set('bb_coins',coins);
-    ownedArr.push(id);store.set(isHat?'bb_ownedH':'bb_owned',ownedArr);
-    if(isHat){hat=id;store.set('bb_hat',hat);}else{skin=id;store.set('bb_skin',skin);}
-    toast('Куплено и надето!');buildShop();drawPrev();}
-  else toast('Не хватает эникойнов! Убивайте в сражалке ⚔');}
+function equip(kind,id){
+  if(kind==='shirt'){skin=id;store.set('bb_skin',skin);}
+  if(kind==='hat'){hat=id;store.set('bb_hat',hat);}
+  if(kind==='glasses'){gls=id;store.set('bb_gls',gls);}
+  if(kind==='face'){fc=id;store.set('bb_fc',fc);}
+  toast('Надето!');buildShop();drawPrev();}
 function buildShop(){
   updCoins();
-  const mk=(list,wrap,isHat,ownedArr,curId)=>{wrap.innerHTML='';
+  const mk=(list,wrap,ownedArr,curId)=>{wrap.innerHTML='';
     list.forEach(s=>{
       const d=document.createElement('div');d.className='card';
       const th=document.createElement('div');th.className='thumb';
-      if(!isHat&&AS.shirt[s.id]){const cn=document.createElement('canvas');cn.width=200;cn.height=200;const x=cn.getContext('2d');
-        x.drawImage(AS.shirt[s.id],205,540,395,540,10,10,180,180);th.appendChild(cn);}
-      else if(isHat&&AS.hat[s.id]){const cn=document.createElement('canvas');cn.width=200;cn.height=160;const x=cn.getContext('2d');
-        const w=180,h=w*s.src[3]/s.src[2];x.drawImage(AS.hat[s.id],s.src[0],s.src[1],s.src[2],s.src[3],10,150-h,w,h);th.appendChild(cn);}
-      else{th.style.background=isHat?'#22304a':(s.col||'#22304a');}
+      const asset=s.kind==='shirt'?AS.shirt[s.id]:s.kind==='hat'?AS.hat[s.id]:s.kind==='glasses'?AS.glasses[s.id]:AS.face[s.id];
+      if(asset&&s.kind==='shirt'){const cn=document.createElement('canvas');cn.width=200;cn.height=200;const x=cn.getContext('2d');
+        x.drawImage(asset,205,540,395,540,10,10,180,180);th.appendChild(cn);}
+      else if(asset&&s.src){const cn=document.createElement('canvas');cn.width=200;cn.height=160;const x=cn.getContext('2d');
+        const w=180,h=w*s.src[3]/s.src[2];x.drawImage(asset,s.src[0],s.src[1],s.src[2],s.src[3],10,150-h,w,h);th.appendChild(cn);}
+      else if(asset){const cn=document.createElement('canvas');cn.width=160;cn.height=160;const x=cn.getContext('2d');
+        x.drawImage(asset,260,250,350,350,10,10,140,140);th.appendChild(cn);}
+      else{th.style.background=s.col||'#22304a';}
       d.appendChild(th);
-      d.insertAdjacentHTML('beforeend','<h3>'+s.n+'</h3><div style="font-size:13px;opacity:.7">'+(s.price?('цена: '+s.price+' 🪙'):'стартовая')+'</div>');
+      d.insertAdjacentHTML('beforeend','<h3>'+s.n+'</h3><div style="font-size:13px;opacity:.7">'+(s.sp?'⚙ стимпанк: квесты/пропуск':(s.price?('цена: '+s.price+' 🪙'):'стартовая'))+'</div>');
       const b=document.createElement('button');
       if(curId===s.id){b.textContent='✅ Надето';b.disabled=true;}
-      else if(ownedArr.includes(s.id)){b.className='primary';b.textContent='Надеть';b.onclick=()=>{
-        if(isHat){hat=s.id;store.set('bb_hat',hat);}else{skin=s.id;store.set('bb_skin',skin);}
-        toast('Надето!');buildShop();drawPrev();};}
-      else{b.textContent='Купить за '+s.price+' 🪙';b.onclick=()=>buyItem(s.price,ownedArr,s.id,isHat);}
+      else if(ownedArr.includes(s.id)){b.className='primary';b.textContent='Надеть';b.onclick=()=>equip(s.kind,s.id);}
+      else if(s.sp){b.textContent='🏃 Квест / 🎫 Пропуск';b.disabled=true;}
+      else{b.textContent='Купить за '+s.price+' 🪙';b.onclick=()=>{
+        if(coins>=s.price){coins-=s.price;store.set('bb_coins',coins);
+          ownedArr.push(s.id);store.set(ownedKeyFor(s.kind),ownedArr);equip(s.kind,s.id);}
+        else toast('Не хватает эникойнов! Убивайте ботов ⚔');};}
       d.appendChild(b);wrap.appendChild(d);});};
-  mk(SHIRTS,$('#shopShirts'),false,owned,skin);
-  mk(HATS,$('#shopHats'),true,ownedH,hat);}
+  mk(SHIRTS,$('#shopShirts'),owned,skin);
+  mk(HATS,$('#shopHats'),ownedH,hat);
+  mk(GLASSES,$('#shopGlasses'),ownedG,gls);
+  mk(FACES,$('#shopFaces'),ownedF,fc);}
 
 /* ============ СТУДИЯ ============ */
 const ED={world:null,paint:4,models:{},id:store.get('bb_pid',null),lang:'any',scrAny:ANY_EX,scrJs:JS_EX};
@@ -765,7 +851,7 @@ function buildLessons(){const w=$('#lesCards');w.innerHTML='';
     const pre=document.createElement('pre');pre.textContent=L.c;d.appendChild(pre);
     const row=document.createElement('div');row.className='row';
     const b1=document.createElement('button');b1.textContent='📋 Вставить в редактор';
-    b1.onclick=()=>{ED.lang='any';ED.scrAny=L.c;$('#langSel').value='any';$('#scrTxt').value=L.c;toast('Вставлено! Откройте вкладку «ЭниЯзык / JS»');};
+    b1.onclick=()=>{ED.lang='any';ED.scrAny=L.c;$('#langSel').value='any';$('#scrTxt').value=L.c;toast('Вставлено!');};
     const b2=document.createElement('button');b2.className='primary';b2.textContent='▶ Тест';
     b2.onclick=()=>{ED.lang='any';ED.scrAny=L.c;$('#pTest').click();};
     row.appendChild(b1);row.appendChild(b2);d.appendChild(row);w.appendChild(d);});}
@@ -827,55 +913,8 @@ function buildExpo(){const c=$('#exCards');c.innerHTML='';
     d.querySelector('button').onclick=()=>startGame({project:p,mode:'sandbox'});
     c.appendChild(d);});}
 
-/* ============ СЧЁТЧИК ПОСЕТИТЕЛЕЙ (РЕАЛТАЙМ) ============ */
-const Presence={id:Math.random().toString(36).slice(2,8),ws:null,users:new Set(),timer:null,
- start(){
-  this.users.add(this.id);
-  const tryConnect=(i)=>{
-   if(i>=3)return;
-   const urls=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'];
-   try{
-    const ws=new WebSocket(urls[i],['mqtt']);ws.binaryType='arraybuffer';
-    ws.onopen=()=>{
-     const id='pres_'+this.id;
-     const pkt=(t,b)=>new Uint8Array([t,...(()=>{const o=[];let n=b.length;do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;o.push(d);}while(n>0);return o;})(),...b]);
-     const str=s=>{const b=[...new TextEncoder().encode(s)];return[b.length>>8,b.length&255,...b];};
-     ws.send(pkt(0x10,[0,4,77,81,84,84,4,2,0,60,...str(id)]));
-    };
-    ws.onmessage=e=>{
-     const d=new Uint8Array(e.data);const t=d[0]>>4;let i=1,m=1,v=0;
-     for(;;){const b=d[i++];v+=(b&127)*m;m*=128;if(!(b&128))break;}
-     if(t===2){ // CONNACK
-      const topic='eniblock_presence';
-      const sub=pkt(0x82,[0,1,...str(topic),0]);ws.send(sub);
-      this.ws=ws;
-      this.timer=setInterval(()=>{
-       const msg=JSON.stringify({id:this.id,t:Date.now()});
-       const p=[...new TextEncoder().encode(msg)];
-       const pub=pkt(0x30,[...str(topic),...p]);
-       try{ws.send(pub);}catch(e){}
-       // cleanup old
-       const now=Date.now();
-       for(const u of this.users){if(now-u.t>5000)this.users.delete(u);}
-       $('#onlineCount').textContent='👥 Онлайн: '+this.users.size;
-      },2000);
-     }
-     if(t===3){ // PUBLISH
-      const tl=(d[i]<<8)|d[i+1];
-      const payload=JSON.parse(new TextDecoder().decode(d.slice(i+2+tl)));
-      if(payload&&payload.id){this.users.add({id:payload.id,t:Date.now()});$('#onlineCount').textContent='👥 Онлайн: '+this.users.size;}
-     }
-    };
-    ws.onclose=()=>{if(!this.ws)tryConnect(i+1);};
-    ws.onerror=()=>{};
-   }catch(e){tryConnect(i+1);}
-  };
-  tryConnect(0);
- }};
-Presence.start();
-
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>{document.body.style.height=visualViewport.height+'px';});
-updCoins();drawPrev();
+updCoins();drawPrev();checkPass();
 </script>
 </body>
 </html>
