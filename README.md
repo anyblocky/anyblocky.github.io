@@ -248,7 +248,28 @@ let ownedF=store.get('bb_ownedF',['none']);
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2600);}
 const COARSE=matchMedia('(pointer:coarse)').matches;
 if(COARSE)document.body.classList.add('coarse');
-function show(id){['menu','game','studio','expo','shop','pass','quests'].forEach(s=>$('#'+s).classList.toggle('hidden',s!==id));}
+
+// Обновленная функция show с остановкой музыки
+function show(id){
+  ['menu','game','studio','expo','shop','pass','quests'].forEach(s=>{
+    const el=$('#'+s);
+    if(el){
+        const isHidden = (s!==id);
+        el.classList.toggle('hidden', isHidden);
+        
+        // Если уходим из меню (id !== 'menu'), останавливаем музыку
+        if(s === 'menu' && isHidden){
+            stopMusic();
+        }
+        // Если возвращаемся в меню, можно возобновить (опционально)
+        if(s === 'menu' && !isHidden && settings.musicOn){
+             if(bgMusic.paused) bgMusic.play().catch(()=>{});
+             updateMusicUI();
+        }
+    }
+  });
+}
+
 function updCoins(){$('#coinChip').textContent='🪙 '+coins;$('#hudCoins').textContent='🪙 '+coins;$('#shCoins').textContent='🪙 '+coins;}
 function addCoins(n){coins+=n;store.set('bb_coins',coins);updCoins();toast('+'+n+' эникойнов 🪙');}
 function goFS(){const el=document.documentElement;
@@ -259,11 +280,31 @@ function goFS(){const el=document.documentElement;
   }catch(e){}}
 $('#btnFS').onclick=goFS;
 
-/* ============ МУЗЫКАЛЬНЫЙ ПЛЕЕР ============ */
+/* ============ МУЗЫКАЛЬНЫЙ ПЛЕЕР (23 МЕСТА) ============ */
 const MUSIC_LIST=[
   {name:'Winter Theme',file:'music/winter_theme.mp3'},
-  // Добавьте свои треки сюда:
-  // {name:'Название трека',file:'music/имя_файла.mp3'}
+  {name:'Трек 2',file:'music/track_02.mp3'},
+  {name:'Трек 3',file:'music/track_03.mp3'},
+  {name:'Трек 4',file:'music/track_04.mp3'},
+  {name:'Трек 5',file:'music/track_05.mp3'},
+  {name:'Трек 6',file:'music/track_06.mp3'},
+  {name:'Трек 7',file:'music/track_07.mp3'},
+  {name:'Трек 8',file:'music/track_08.mp3'},
+  {name:'Трек 9',file:'music/track_09.mp3'},
+  {name:'Трек 10',file:'music/track_10.mp3'},
+  {name:'Трек 11',file:'music/track_11.mp3'},
+  {name:'Трек 12',file:'music/track_12.mp3'},
+  {name:'Трек 13',file:'music/track_13.mp3'},
+  {name:'Трек 14',file:'music/track_14.mp3'},
+  {name:'Трек 15',file:'music/track_15.mp3'},
+  {name:'Трек 16',file:'music/track_16.mp3'},
+  {name:'Трек 17',file:'music/track_17.mp3'},
+  {name:'Трек 18',file:'music/track_18.mp3'},
+  {name:'Трек 19',file:'music/track_19.mp3'},
+  {name:'Трек 20',file:'music/track_20.mp3'},
+  {name:'Трек 21',file:'music/track_21.mp3'},
+  {name:'Трек 22',file:'music/track_22.mp3'},
+  {name:'Трек 23',file:'music/track_23.mp3'}
 ];
 let currentTrack=0;
 const bgMusic=$('#bgMusic');
@@ -272,23 +313,41 @@ bgMusic.volume=settings.volume/100;
 function updateMusicUI(){
   $('#trackName').textContent=MUSIC_LIST[currentTrack]?.name||'Музыка';
   $('#musicToggle').textContent=bgMusic.paused?'▶':'⏸';
-  $('#musicPanel').classList.toggle('hidden',!settings.musicOn);
+  // Показываем плеер только если мы в меню
+  if($('#game').classList.contains('hidden')){
+      $('#musicPanel').classList.toggle('hidden',!settings.musicOn);
+  } else {
+      $('#musicPanel').classList.add('hidden');
+  }
 }
 
 function playTrack(idx){
   if(!MUSIC_LIST[idx])return;
   currentTrack=idx;
   bgMusic.src=MUSIC_LIST[currentTrack].file;
-  bgMusic.play().catch(()=>{});
+  // Играем только если мы сейчас в меню
+  if($('#game').classList.contains('hidden')){
+      bgMusic.play().catch(()=>{});
+  }
+  updateMusicUI();
+}
+
+function stopMusic(){
+  bgMusic.pause();
+  bgMusic.currentTime=0;
   updateMusicUI();
 }
 
 $('#musicToggle').onclick=()=>{
+  // Разрешаем управлять только из меню
+  if(!$('#game').classList.contains('hidden')) return; 
+  
   if(bgMusic.paused){bgMusic.play();updateMusicUI();}
   else{bgMusic.pause();updateMusicUI();}
 };
 
 $('#musicNext').onclick=()=>{
+  if(!$('#game').classList.contains('hidden')) return;
   currentTrack=(currentTrack+1)%MUSIC_LIST.length;
   playTrack(currentTrack);
 };
@@ -300,14 +359,23 @@ $('#volSlider').oninput=(e)=>{
   store.set('bb_set',settings);
 };
 
-bgMusic.onended=()=>playTrack((currentTrack+1)%MUSIC_LIST.length);
+// При окончании трека переключаем, но проверяем, не ушли ли мы в игру
+bgMusic.onended=()=>{
+    if($('#game').classList.contains('hidden')){
+        playTrack((currentTrack+1)%MUSIC_LIST.length);
+    }
+};
 
 function initMusic(){
   if(MUSIC_LIST.length===0){$('#musicPanel').classList.add('hidden');return;}
   updateMusicUI();
-  if(settings.musicOn&&MUSIC_LIST.length>0){
+  
+  // Автозапуск только если мы стартовали на странице меню
+  if(settings.musicOn && $('#menu').classList.contains('screen') && !$('#menu').classList.contains('hidden')){
     document.addEventListener('click',function initPlay(){
-      bgMusic.play().catch(()=>{});
+      if($('#game').classList.contains('hidden')){ // Проверяем, что все еще в меню
+          bgMusic.play().catch(()=>{});
+      }
       document.removeEventListener('click',initPlay);
     },{once:true});
     playTrack(0);
