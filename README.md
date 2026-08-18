@@ -731,138 +731,110 @@ function drawChar(c,x,y,e){
     c.fillStyle=e.hp>40?'#45d155':'#ff5722';c.fillRect(x-25,y-72,50*Math.max(0,e.hp)/100,6);}
   const ht=G.t-(e.hitT||-9);if(ht>0&&ht<.2){c.fillStyle='#ff000055';c.beginPath();c.arc(x,y-20,34,0,7);c.fill();}}
 
-// Исправленная функция drawPrev
+// Восстановленная и исправленная функция drawPrev
 function drawPrev(){
   const c=$('#prevCv').getContext('2d');
   c.clearRect(0,0,150,170);
 
-  if(AS.tool[1]){
-    const e = {tool:1, face:1, skin:skin, hat:hat, gls:gls, fc:fc, self:true};
-    const s2 = 1.7; // Масштаб для меню
-    const x = 75; // Центр X холста
-    const y = 112; // Центр Y холста
+  // Координаты центра головы в меню (примерные)
+  const x = 75; // Центр холста
+  const y = 112; // Центр холста
+  const hx = x; // Центр головы X
+  const hy = y - 40; // Центр головы Y (выше центра холста)
 
-    // --- Отрисовка базового персонажа ---
-    const spr = AS.tool[1];
-    const shirt = AS.shirt[e.skin || 'red'];
+  // Просто нарисуем голову и тело
+  c.fillStyle='#f6ec12'; // Цвет кожи
+  c.lineWidth=8;
+  c.beginPath();
+  c.arc(hx, hy, 30, 0, 7); // Голова
+  c.fill();
+  c.stroke();
 
-    if(spr){
-      const sx = 40, sy = 250, sw = 820, sh = 830;
-      const k = 88 / sw; // Масштабирование основного спрайта
-      const dw = 88, dh = sh * k;
+  // Тело
+  const shirtCol=(SHIRTS.find(s=>s.id===skin)||SHIRTS[0]).col;
+  c.fillStyle=shirtCol;
+  c.fillRect(hx-28, hy+10, 56, 54); // Тело
 
-      c.save();
-      c.translate(x, y);
-      if((e.face || 1) < 0) c.scale(-1, 1); // Отражение при взгляде влево
+  // Отрисовка аксессуаров
+  const face = AS.face[fc];
+  const glasses = AS.glasses[gls];
+  const hatI = AS.hat[hat];
 
-      const ox = -(402 - 40) * k; // Смещение для центровки спрайта
-      const oy = 46 - dh;
+  const glC = GLASSES.find(q => q.id === gls);
+  const hatC = HATS.find(q => q.id === hat);
 
-      c.drawImage(spr, sx, sy, sw, sh, ox, oy, dw, dh);
-
-      // Отрисовка футболки
-      if(shirt){
-        c.drawImage(shirt, 235, 565, 335, 515,
-                    ox + (235 - sx) * k, oy + (565 - sy) * k, 335 * k, 515 * k);
-      }
-
-      // --- Определение центра головы ---
-      const hx = 2 * s2; // Центр головы X (относительно спрайта), масштабируется
-      const hy = -23 * s2; // Центр головы Y (относительно спрайта), масштабируется
-
-      // --- Отрисовка аксессуаров ---
-      const face = AS.face[e.fc || 'none'];
-      const glasses = AS.glasses[e.gls || 'none'];
-      const hatI = AS.hat[e.hat || 'none'];
-
-      const glC = GLASSES.find(q => q.id === e.gls);
-      const hatC = HATS.find(q => q.id === e.hat);
-
-      if(face){
-         // Используем стандартные параметры для лица
-         const baseWidth = 39;
-         const baseSrc = [260, 250, 350, 350]; // Предполагаемые параметры источника
-         drawItem(c, face, baseSrc, hx, hy, baseWidth * s2, 'center');
-      }
-
-      if(glasses && glC){
-         // Используем параметры из определения GLASSES, масштабируем dx, dy, w
-         drawItem(c, glasses, glC.src, hx + glC.dx * s2, hy + glC.dy * s2, glC.w * s2, 'center');
-      }
-
-      if(hatI && hatC){
-         // Используем параметры из определения HATS, масштабируем dx, dy, w
-         drawItem(c, hatI, hatC.src, hx + hatC.dx * s2, hy + hatC.dy * s2, hatC.w * s2, 'bottom');
-      }
-
-      c.restore();
-    } else {
-      // --- Резервный вариант без ассетов ---
-      const shirtCol = (SHIRTS.find(s => s.id === e.skin || 'red') || SHIRTS[0]).col;
-      const hxv = x;
-      const hyv = y - 40;
-
-      c.strokeStyle = '#000';
-      c.lineCap = 'round';
-
-      // Тело
-      c.fillStyle = shirtCol;
-      c.lineWidth = 9;
-      c.beginPath();
-      c.rect(x - 28, y - 12, 56, 54);
-      c.fill();
-      c.stroke();
-
-      // Ноги и руки
-      c.lineWidth = 6;
-      c.beginPath();
-      c.arc(x + 10, y + 6, 8, -1.6, 1.6);
-      c.stroke();
-      c.beginPath();
-      c.moveTo(x + 15, y - 2);
-      c.lineTo(x + 3, y + 20);
-      c.stroke();
-
-      // Голова
-      c.fillStyle = '#f6ec12';
-      c.lineWidth = 8;
-      c.beginPath();
-      c.arc(hxv, hyv, 30, 0, 7);
-      c.fill();
-      c.stroke();
-
-      // Лицо (если нет изображения)
-      if (!AS.face[e.fc || 'none']) {
-        c.lineWidth = 5;
-        c.beginPath();
-        c.moveTo(x - 15, hyv - 6);
-        c.lineTo(x + 16, hyv - 3);
-        c.stroke();
-      }
-
-      // Аксессуары для резервного варианта (требуют доработки)
-      // ... (реализация аналогично AS-версии, но с учетом резервного рисования)
-
-      const hx = x + (e.face >= 0 ? 40 : -40);
-      const hy = y + 8;
-      const hand = (px, py) => {
-        c.fillStyle = '#f6ec12';
-        c.lineWidth = 7;
-        c.beginPath();
-        c.rect(px - 11, py - 11, 22, 22);
-        c.fill();
-        c.stroke();
-      };
-      if (e.tool === 5) {
-        hand(x - 40, y - 24);
-        hand(x + 40, y - 24);
-      } else {
-        hand(hx, hy);
-      }
-      // Инструменты для резервного варианта (требуют доработки)
-      // ... (реализация аналогично AS-версии, но с учетом резервного рисования)
-    }
+  if(face){
+    drawItem(c, face, [260, 250, 350, 350], hx, hy, 39, 'center');
   }
+
+  if(glasses && glC){
+    drawItem(c, glasses, glC.src, hx + glC.dx, hy + glC.dy, glC.w, 'center');
+  }
+
+  if(hatI && hatC){
+    drawItem(c, hatI, hatC.src, hx + hatC.dx, hy + hatC.dy, hatC.w, 'bottom');
+  }
+}
+
+
+/* ============ КАТАЛОГ ============ */
+function buildShop(){
+  // Функция для построения карточки предмета
+  function createCard(item, ownedList, updateFn) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const isOwned = ownedList.includes(item.id);
+    card.innerHTML = `<h3>${item.n}</h3><div>${item.price} 🪙</div>`;
+    const btn = document.createElement('button');
+    btn.textContent = isOwned ? ' equipped ' : ' buy ';
+    btn.onclick = () => {
+      if (isOwned) {
+        updateFn(item.id);
+        buildShop(); // Перестроить, чтобы обновить статус "equipped"
+      } else if (coins >= item.price) {
+        addCoins(-item.price);
+        ownedList.push(item.id);
+        store.set(ownedKeyFor(item.kind), ownedList);
+        toast('Куплено: ' + item.n);
+        buildShop(); // Перестроить, чтобы обновить статус "buy/equipped"
+      } else {
+        toast('Недостаточно средств!');
+      }
+    };
+    card.appendChild(btn);
+    return card;
+  }
+
+  // Обновление скина персонажа
+  function updateSkin(id) { skin = id; store.set('bb_skin', skin); drawPrev(); }
+  function updateHat(id) { hat = id; store.set('bb_hat', hat); drawPrev(); }
+  function updateGlasses(id) { gls = id; store.set('bb_gls', gls); drawPrev(); }
+  function updateFace(id) { fc = id; store.set('bb_fc', fc); drawPrev(); }
+
+  // Очистка и заполнение секций
+  $('#shopShirts').innerHTML = '';
+  owned.forEach(id => {
+    const item = ITEM_INDEX[id];
+    if (item) $('#shopShirts').appendChild(createCard(item, owned, updateSkin));
+  });
+
+  $('#shopHats').innerHTML = '';
+  ownedH.forEach(id => {
+    const item = ITEM_INDEX[id];
+    if (item) $('#shopHats').appendChild(createCard(item, ownedH, updateHat));
+  });
+
+  $('#shopGlasses').innerHTML = '';
+  ownedG.forEach(id => {
+    const item = ITEM_INDEX[id];
+    if (item) $('#shopGlasses').appendChild(createCard(item, ownedG, updateGlasses));
+  });
+
+  $('#shopFaces').innerHTML = '';
+  ownedF.forEach(id => {
+    const item = ITEM_INDEX[id];
+    if (item) $('#shopFaces').appendChild(createCard(item, ownedF, updateFace));
+  });
 }
 
 
@@ -1016,6 +988,7 @@ function equip(kind,id){
   if(kind==='glasses'){gls=id;store.set('bb_gls',gls);}
   if(kind==='face'){fc=id;store.set('bb_fc',fc);}
   toast('Выбрано: ' + ITEM_INDEX[id]?.n || 'неизвестный предмет');
+  drawPrev(); // Обновляем превью
 }
 </script>
 </body>
