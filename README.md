@@ -65,7 +65,7 @@
   .card.wide{width:340px}
   .card pre{background:#0f1420;border-radius:8px;padding:8px;font-size:12px;overflow:auto;max-height:140px}
   .thumb{width:100%;height:110px;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0f1420}
-  .thumb img,.thumb canvas{max-width:100%;max-height:100%}
+  .thumb canvas{max-width:100%;max-height:100%}
   .secTitle{margin-top:6px;font-size:18px}
   .xpBar{height:14px;background:#0f1420;border-radius:8px;overflow:hidden;flex:1}
   .xpBar div{height:100%;background:linear-gradient(90deg,#ffd23e,#ff9040)}
@@ -75,8 +75,6 @@
   .gLogo span:nth-child(1){color:#4285F4}.gLogo span:nth-child(2){color:#EA4335}.gLogo span:nth-child(3){color:#FBBC05}.gLogo span:nth-child(4){color:#4285F4}.gLogo span:nth-child(5){color:#34A853}.gLogo span:nth-child(6){color:#EA4335}
   .mCard input{background:#f1f3f4;color:#202124;border:1px solid #dadce0}
   #toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#202124e6;padding:10px 18px;border-radius:30px;z-index:99;display:none;max-width:92vw}
-  
-  /* === МУЗЫКАЛЬНЫЙ ПЛЕЕР === */
   #musicPanel{position:fixed;bottom:calc(8px + env(safe-area-inset-bottom));right:calc(8px + env(safe-area-inset-right));display:flex;align-items:center;gap:8px;background:#1a2236;padding:8px 12px;border-radius:30px;z-index:100}
   #musicPanel.hidden{display:none}
   #musicPanel button{width:36px;height:36px;padding:0;border-radius:50%;font-size:16px}
@@ -87,8 +85,7 @@
 </head>
 <body>
 
-<!-- АУДИО ЭЛЕМЕНТЫ -->
-<audio id="bgMusic" loop></audio>
+<audio id="bgMusic"></audio>
 
 <div id="menu" class="screen">
   <div id="userChip" class="hidden"><span id="uName"></span><button id="logout">Выйти</button></div>
@@ -219,7 +216,6 @@ border-radius:4px;</textarea>
   </div>
 </div>
 
-<!-- МУЗЫКАЛЬНЫЙ ПЛЕЕР -->
 <div id="musicPanel" class="hidden">
   <button id="musicToggle">▶</button>
   <span id="trackName">Музыка</span>
@@ -233,7 +229,7 @@ border-radius:4px;</textarea>
 'use strict';
 const $=s=>document.querySelector(s);
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let settings=store.get('bb_set',{gid:'',volume:50,musicOn:true});
+let settings=store.get('bb_set',{gid:'',volume:50});
 let user=store.get('bb_user',null);
 let coins=store.get('bb_coins',0);
 let xp=store.get('bb_xp',0);
@@ -248,28 +244,9 @@ let ownedF=store.get('bb_ownedF',['none']);
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2600);}
 const COARSE=matchMedia('(pointer:coarse)').matches;
 if(COARSE)document.body.classList.add('coarse');
-
-// Обновленная функция show с остановкой музыки
-function show(id){
-  ['menu','game','studio','expo','shop','pass','quests'].forEach(s=>{
-    const el=$('#'+s);
-    if(el){
-        const isHidden = (s!==id);
-        el.classList.toggle('hidden', isHidden);
-        
-        // Если уходим из меню (id !== 'menu'), останавливаем музыку
-        if(s === 'menu' && isHidden){
-            stopMusic();
-        }
-        // Если возвращаемся в меню, можно возобновить (опционально)
-        if(s === 'menu' && !isHidden && settings.musicOn){
-             if(bgMusic.paused) bgMusic.play().catch(()=>{});
-             updateMusicUI();
-        }
-    }
-  });
-}
-
+function show(id){['menu','game','studio','expo','shop','pass','quests'].forEach(s=>$('#'+s).classList.toggle('hidden',s!==id));
+  if(id==='menu'){updateMusicUI();if(settings.musicOn!==false&&bgMusic.paused&&bgMusic.src)bgMusic.play().catch(()=>{});}
+  else stopMusic();}
 function updCoins(){$('#coinChip').textContent='🪙 '+coins;$('#hudCoins').textContent='🪙 '+coins;$('#shCoins').textContent='🪙 '+coins;}
 function addCoins(n){coins+=n;store.set('bb_coins',coins);updCoins();toast('+'+n+' эникойнов 🪙');}
 function goFS(){const el=document.documentElement;
@@ -280,109 +257,35 @@ function goFS(){const el=document.documentElement;
   }catch(e){}}
 $('#btnFS').onclick=goFS;
 
-/* ============ МУЗЫКАЛЬНЫЙ ПЛЕЕР (23 МЕСТА) ============ */
+/* ============ МУЗЫКА: РОВНО 5 ПЕСЕН ============ */
 const MUSIC_LIST=[
   {name:'Winter Theme',file:'music/winter_theme.mp3'},
   {name:'Трек 2',file:'music/track_02.mp3'},
   {name:'Трек 3',file:'music/track_03.mp3'},
   {name:'Трек 4',file:'music/track_04.mp3'},
-  {name:'Трек 5',file:'music/track_05.mp3'},
-  {name:'Трек 6',file:'music/track_06.mp3'},
-  {name:'Трек 7',file:'music/track_07.mp3'},
-  {name:'Трек 8',file:'music/track_08.mp3'},
-  {name:'Трек 9',file:'music/track_09.mp3'},
-  {name:'Трек 10',file:'music/track_10.mp3'},
-  {name:'Трек 11',file:'music/track_11.mp3'},
-  {name:'Трек 12',file:'music/track_12.mp3'},
-  {name:'Трек 13',file:'music/track_13.mp3'},
-  {name:'Трек 14',file:'music/track_14.mp3'},
-  {name:'Трек 15',file:'music/track_15.mp3'},
-  {name:'Трек 16',file:'music/track_16.mp3'},
-  {name:'Трек 17',file:'music/track_17.mp3'},
-  {name:'Трек 18',file:'music/track_18.mp3'},
-  {name:'Трек 19',file:'music/track_19.mp3'},
-  {name:'Трек 20',file:'music/track_20.mp3'},
-  {name:'Трек 21',file:'music/track_21.mp3'},
-  {name:'Трек 22',file:'music/track_22.mp3'},
-  {name:'Трек 23',file:'music/track_23.mp3'}
+  {name:'Трек 5',file:'music/track_05.mp3'}
 ];
 let currentTrack=0;
 const bgMusic=$('#bgMusic');
-bgMusic.volume=settings.volume/100;
-
+bgMusic.volume=(settings.volume!=null?settings.volume:50)/100;
 function updateMusicUI(){
-  $('#trackName').textContent=MUSIC_LIST[currentTrack]?.name||'Музыка';
+  $('#trackName').textContent=MUSIC_LIST[currentTrack]?MUSIC_LIST[currentTrack].name:'Музыка';
   $('#musicToggle').textContent=bgMusic.paused?'▶':'⏸';
-  // Показываем плеер только если мы в меню
-  if($('#game').classList.contains('hidden')){
-      $('#musicPanel').classList.toggle('hidden',!settings.musicOn);
-  } else {
-      $('#musicPanel').classList.add('hidden');
-  }
-}
-
+  const inMenu=!$('#menu').classList.contains('hidden');
+  $('#musicPanel').classList.toggle('hidden',!inMenu);}
 function playTrack(idx){
   if(!MUSIC_LIST[idx])return;
-  currentTrack=idx;
-  bgMusic.src=MUSIC_LIST[currentTrack].file;
-  // Играем только если мы сейчас в меню
-  if($('#game').classList.contains('hidden')){
-      bgMusic.play().catch(()=>{});
-  }
-  updateMusicUI();
-}
+  currentTrack=idx;bgMusic.src=MUSIC_LIST[currentTrack].file;
+  if(!$('#menu').classList.contains('hidden'))bgMusic.play().catch(()=>{});
+  updateMusicUI();}
+function stopMusic(){bgMusic.pause();updateMusicUI();}
+$('#musicToggle').onclick=()=>{if(bgMusic.paused)bgMusic.play().catch(()=>{});else bgMusic.pause();updateMusicUI();};
+$('#musicNext').onclick=()=>playTrack((currentTrack+1)%MUSIC_LIST.length);
+$('#volSlider').oninput=e=>{const v=+e.target.value;bgMusic.volume=v/100;settings.volume=v;store.set('bb_set',settings);};
+bgMusic.onended=()=>playTrack((currentTrack+1)%MUSIC_LIST.length);
+document.addEventListener('pointerdown',function first(){if(!$('#menu').classList.contains('hidden')){playTrack(0);}document.removeEventListener('pointerdown',first);},{once:true});
 
-function stopMusic(){
-  bgMusic.pause();
-  bgMusic.currentTime=0;
-  updateMusicUI();
-}
-
-$('#musicToggle').onclick=()=>{
-  // Разрешаем управлять только из меню
-  if(!$('#game').classList.contains('hidden')) return; 
-  
-  if(bgMusic.paused){bgMusic.play();updateMusicUI();}
-  else{bgMusic.pause();updateMusicUI();}
-};
-
-$('#musicNext').onclick=()=>{
-  if(!$('#game').classList.contains('hidden')) return;
-  currentTrack=(currentTrack+1)%MUSIC_LIST.length;
-  playTrack(currentTrack);
-};
-
-$('#volSlider').oninput=(e)=>{
-  const v=+e.target.value;
-  bgMusic.volume=v/100;
-  settings.volume=v;
-  store.set('bb_set',settings);
-};
-
-// При окончании трека переключаем, но проверяем, не ушли ли мы в игру
-bgMusic.onended=()=>{
-    if($('#game').classList.contains('hidden')){
-        playTrack((currentTrack+1)%MUSIC_LIST.length);
-    }
-};
-
-function initMusic(){
-  if(MUSIC_LIST.length===0){$('#musicPanel').classList.add('hidden');return;}
-  updateMusicUI();
-  
-  // Автозапуск только если мы стартовали на странице меню
-  if(settings.musicOn && $('#menu').classList.contains('screen') && !$('#menu').classList.contains('hidden')){
-    document.addEventListener('click',function initPlay(){
-      if($('#game').classList.contains('hidden')){ // Проверяем, что все еще в меню
-          bgMusic.play().catch(()=>{});
-      }
-      document.removeEventListener('click',initPlay);
-    },{once:true});
-    playTrack(0);
-  }
-}
-
-/* ============ ВЕЩИ (посадка исправлена: шапки — низом на макушку, очки — по глазам) ============ */
+/* ============ ВЕЩИ ============ */
 const SHIRTS=[
  {id:'red',n:'Классическая красная',price:0,file:null,col:'#e21b1b',kind:'shirt'},
  {id:'pink',n:'Розовая',price:50,file:'shirt1.png',col:'#e01866',kind:'shirt'},
@@ -392,7 +295,6 @@ const SHIRTS=[
  {id:'green',n:'Зелёная',price:150,file:'shirt5.png',col:'#45d155',kind:'shirt'},
  {id:'sp_tie',n:'⚙ Костюм с галстуком',price:0,file:'shirt_sp.png',col:'#7a4a1f',kind:'shirt',sp:true}
 ];
-/* dy у шапок = отступ НИЗА шапки от центра головы (низ прижат к макушке) */
 const HATS=[
  {id:'none',n:'Без шапки',price:0,file:null,src:null,w:0,dx:0,dy:0,kind:'hat'},
  {id:'hammer',n:'Шапка-молоток',price:200,file:'hat1.png',src:[160,265,225,250],w:34,dx:6,dy:-30,kind:'hat'},
@@ -403,7 +305,6 @@ const HATS=[
  {id:'sp_beret',n:'⚙ Берет инженера',price:0,file:'sp_beret.png',src:[140,265,220,125],w:40,dx:0,dy:-30,kind:'hat',sp:true},
  {id:'sp_gearhat',n:'⚙ Котелок с шестерёнкой',price:0,file:'sp_gearhat.png',src:[70,260,275,190],w:42,dx:0,dy:-32,kind:'hat',sp:true}
 ];
-/* dy у очков = смещение ЦЕНТРА от центра головы (линия глаз ≈ -2) */
 const GLASSES=[
  {id:'g_yellow',n:'Жёлтые очки',price:100,file:'gl_yellow.png',src:[115,295,240,110],w:40,dx:0,dy:-2,kind:'glasses'},
  {id:'sp_grid',n:'⚙ Очки с сеткой',price:0,file:'sp_grid.png',src:[115,295,240,110],w:40,dx:0,dy:-2,kind:'glasses',sp:true},
@@ -626,7 +527,7 @@ updChip();
 if(settings.gid){const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';document.head.appendChild(s);}
 $('#setBtn').onclick=()=>{$('#setGid').value=settings.gid||'';$('#settings').classList.remove('hidden');};
 $('#setClose').onclick=()=>$('#settings').classList.add('hidden');
-$('#setSave').onclick=()=>{settings={gid:$('#setGid').value.trim(),volume:settings.volume,musicOn:settings.musicOn};store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
+$('#setSave').onclick=()=>{settings.gid=$('#setGid').value.trim();store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
 
 /* ============ ИНСТРУМЕНТЫ ============ */
 const TOOLS=[
@@ -654,7 +555,8 @@ function makeApi(){return{
   players:()=>[G.self,...G.bots].map(p=>({name:p.name,x:p.x,y:p.y})),
   others:()=>G.bots.map(p=>({name:p.name,x:p.x,y:p.y})),
   time:()=>G.t};}
-function spawnParts(x,y,n,c){for(let i=0;i<n;i++)G.parts.push({x,y,vx:(Math.random()-.5)*500,vy:(Math.random()-.7)*500,life:.6+Math.random()*.5,c});}
+function spawnParts(x,y,n,c){if(COARSE)n=Math.ceil(n/2);if(G.parts.length>350)return;
+  for(let i=0;i<n;i++)G.parts.push({x,y,vx:(Math.random()-.5)*500,vy:(Math.random()-.7)*500,life:.6+Math.random()*.5,c});}
 function pushChat(n,m){G.chat.push({n,m,t:G.t});if(G.chat.length>6)G.chat.shift();renderChat();}
 function renderChat(){$('#chatBox').innerHTML=G.chat.map(c=>'<div><b>'+c.n+':</b> '+c.m+'</div>').join('');}
 function hurt(e,amt,src){if(G.mode!=='battle'||!e)return;e.hp=(e.hp==null?100:e.hp)-amt;e.hitT=G.t;
@@ -720,413 +622,410 @@ function meleeSwing(att,srcKey,cx,cy){
   const tx=Math.floor(cx/T),ty=Math.floor(cy/T);
   for(let y=ty-1;y<=ty+1;y++)for(let x=tx-1;x<=tx+1;x++){
     if(inB(x,y)&&world[y*W+x]!==9&&world[y*W+x]!==8){const dx=x*T+16-cx,dy=y*T+16-cy;if(dx*dx+dy*dy<70*70)world[y*W+x]=0;}}
-  [G.self,...G.bots].forEach(p=>{if(p&&p!==att&&Math.hypot(p.x-cx,p.y-cy)<80){p.vx+=att.face*500;p.vy-=300;hurt(p,att===G.self?50:10,srcKey);}});
-  spawnParts(cx,cy,12,'#ffffff');
+  [G.self,...G.bots].forEach(p=>{if(p&&Math.hypot(p.x-cx,p.y-cy)<80)hurt(p,35,srcKey);});
 }
-function useTool(wx,wy,btn){
-  if(!G.self)return;
-  const tx=Math.floor(wx/T),ty=Math.floor(wy/T),s=G.self;
-  if(btn===2){if(inB(tx,ty)&&world[ty*W+tx]!==9)world[ty*W+tx]=0;spawnParts(wx,wy,3,'#9aa0a6');return;}
-  if(G.cd>0)return;
-  const tl=s.tool;
-  if(tl===1){G.cd=.35;s.face=wx>=s.x?1:-1;
-    let cx=wx,cy=wy;const d=Math.hypot(wx-s.x,wy-s.y);
-    if(d>170){cx=s.x+(wx-s.x)/d*170;cy=s.y+(wy-s.y)/d*170;}
-    meleeSwing(s,'self',cx,cy);}
-  else if(tl===2){G.cd=.3;if(inB(tx,ty)&&world[ty*W+tx]===5)world[ty*W+tx]=0;
-    G.bots.forEach(b=>{if(Math.hypot(b.x-wx,b.y-wy)<60){b.vx+=(b.x-wx)*8;b.vy-=300;hurt(b,10,'self');}});spawnParts(wx,wy,6,'#fff');}
-  else if(tl===3){const t=getT(tx,ty);
-    if(t&&t!==9){G.copyType=t;toast('Скопирован блок: '+BLOCKS[t].n);}
-    else if(!t&&G.copyType){if(!(tx===Math.floor(s.x/T)&&ty>=Math.floor((s.y-42)/T)&&ty<=Math.floor((s.y+42)/T)))world[ty*W+tx]=G.copyType;spawnParts(wx,wy,4,'#ffd23e');}}
-  else if(tl===4){G.cd=.5;s.face=wx>=s.x?1:-1;const d=Math.hypot(wx-s.x,wy-s.y)||1;
-    G.rockets.push({x:s.x+s.face*20,y:s.y-6,vx:(wx-s.x)/d*640,vy:(wy-s.y)/d*640,life:3,src:'self'});}
-  else if(tl===5){G.cd=.2;if(s.onGround){s.vy=-640;s.onGround=false;}else if(s.air<1){s.air++;s.vy=-600;}}
-  else if(tl===6&&G.script&&G.script.onUse){G.cd=.25;try{G.script.onUse(wx,wy,makeApi());}catch(e){toast('Ошибка скрипта: '+e.message);}}
+function drawChar(ctx,x,y,e){
+  ctx.save();ctx.translate(x,y);
+  if(e.face<0)ctx.scale(-1,1);
+  // Тело
+  const shirt=AS.shirt[e.skin]||AS.shirt['red'];
+  if(shirt){ctx.drawImage(shirt,-20,-30,40,50);}
+  else{ctx.fillStyle=e.col;ctx.fillRect(-15,-20,30,40);}
+  // Голова
+  ctx.fillStyle='#ffccaa';ctx.fillRect(-12,-45,24,24);
+  // Лицо
+  if(e.fc&&AS.face[e.fc])ctx.drawImage(AS.face[e.fc],-12,-45,24,24);
+  // Глаза
+  ctx.fillStyle='#000';ctx.fillRect(-5,-40,4,4);ctx.fillRect(5,-40,4,4);
+  // Шапка
+  if(e.hat&&AS.hat[e.hat]){const h=AS.hat[e.hat];ctx.drawImage(h,-h.w/2+h.dx,-45+h.dy,h.w,30);}
+  // Очки
+  if(e.gls&&AS.glasses[e.gls]){const g=AS.glasses[e.gls];ctx.drawImage(g,-g.w/2+g.dx,-45+g.dy,g.w,20);}
+  ctx.restore();
 }
-function actFront(a){const s=G.self,tx=Math.floor((s.x+s.face*40)/T),ty=Math.floor(s.y/T);
-  if(a==='place')world[ty*W+tx]=G.copyType||4;else if(getT(tx,ty)!==9)world[ty*W+tx]=0;}
-
-/* боты */
-function makeBot(n,c,tl){return{name:n,x:G.spawnX+(Math.random()*300-150),y:G.spawnY-140,vx:0,vy:0,hw:17,hh:42,onGround:false,air:0,dropT:0,coyote:0,jbuf:0,face:1,tool:tl||(1+Math.floor(Math.random()*5)),color:c,hp:100,timer:0,dir:0,cd:0,build:0,wantJump:false};}
-function nextWave(){G.wave=(G.wave||0)+1;
-  for(let i=0;i<1+G.wave;i++)G.bots.push(makeBot('Волна '+G.wave+'-'+(i+1),['#1b6ae2','#1bbf4b','#ff9800'][i%3],1+Math.floor(Math.random()*4)));}
-function botStep(b,dt){
-  b.cd-=dt;b.timer-=dt;const s=G.self,dx=s.x-b.x,adx=Math.abs(dx);
-  if(b.timer<=0){b.timer=.8+Math.random()*1.4;
-    b.dir=adx>80?Math.sign(dx):(Math.random()<.4?0:[-1,1][Math.floor(Math.random()*2)]);
-    if(Math.random()<.3)b.wantJump=true;
-    if(Math.random()<.3)b.build=[1,2,3,4,6,7][Math.floor(Math.random()*6)];}
-  const inp={left:b.dir<0,right:b.dir>0,down:0,jump:0};
-  if(b.wantJump){inp.jump=1;b.wantJump=false;}
-  if(G.mode==='battle'&&s&&G.t>3){
-    if(b.tool===1&&adx<70&&Math.abs(s.y-b.y)<60&&b.cd<=0){b.cd=1.8;meleeSwing(b,b.name,s.x,s.y);}
-    if(b.tool===4&&b.cd<=0&&Math.random()<.012){b.cd=2.6;const d=Math.hypot(s.x-b.x,s.y-b.y)||1;G.rockets.push({x:b.x+b.face*20,y:b.y-6,vx:(s.x-b.x)/d*520,vy:(s.y-b.y)/d*520,life:3,src:b.name});}}
-  if(b.build&&b.onGround){const tx=Math.floor((b.x+b.face*44)/T),ty=Math.floor(b.y/T);
-    if(inB(tx,ty)&&!world[ty*W+tx])world[ty*W+tx]=b.build;b.build=0;}
-  phys(b,dt,inp);
-}
-
-/* ============ ЭНИЯЗЫК ============ */
-const COLS={'красный':'#ff2020','жёлтый':'#ffd23e','желтый':'#ffd23e','зелёный':'#45d155','зеленый':'#45d155','синий':'#2196f3','белый':'#ffffff','фиолетовый':'#7c4dff','оранжевый':'#ff9040'};
-const BLN={};Object.entries(BLOCKS).forEach(([k,v])=>BLN[v.n.toLowerCase()]=+k);
-function parseCmd(line){let m;
-  if(m=line.match(/^если\s+близко\s+([\d.]+):\s*(.+)$/))return{t:'ifnear',n:+m[1],c:parseCmd(m[2])};
-  if(m=line.match(/^взрыв\s+([\d.]+)$/))return{t:'boom',r:+m[1]};
-  if(m=line.match(/^частицы\s+(\d+)\s*(\S+)?$/))return{t:'part',n:+m[1],c:COLS[m[2]]||m[2]||'#fff'};
-  if(m=line.match(/^поставь\s+(-?\d+)\s+(-?\d+)\s+(\S+)$/))return{t:'place',dx:+m[1],dy:+m[2],b:BLN[(m[3]||'').toLowerCase()]||4};
-  if(m=line.match(/^ломай\s+(-?\d+)\s+(-?\d+)$/))return{t:'brk',dx:+m[1],dy:+m[2]};
-  if(m=line.match(/^ракета\s+(-?[\d.]+)\s+(-?[\d.]+)$/))return{t:'rock',vx:+m[1],vy:+m[2]};
-  if(m=line.match(/^гравитация\s+([\d.]+)$/))return{t:'grav',v:+m[1]};
-  if(m=line.match(/^чат\s+"([^"]*)"$/))return{t:'chat',m:m[1]};
-  if(line==='прыжок')return{t:'jump'};
-  return null;}
-function execCmd(c,x,y,bx,by,api){if(!c)return;
-  if(c.t==='ifnear'){if(api.others().some(p=>Math.hypot(p.x-x,p.y-y)<c.n*T))execCmd(c.c,x,y,bx,by,api);}
-  else if(c.t==='boom')api.explode(x,y,c.r);
-  else if(c.t==='part')api.particles(x,y,c.n,c.c);
-  else if(c.t==='place')api.place(bx+c.dx,by+c.dy,c.b);
-  else if(c.t==='brk')api.break(bx+c.dx,by+c.dy);
-  else if(c.t==='rock')api.rocket(x,y,c.vx*10,c.vy*10);
-  else if(c.t==='grav')api.setGravity(c.v);
-  else if(c.t==='chat')api.chat(c.m);
-  else if(c.t==='jump')api.jump();}
-function compileAny(src){
-  const P={click:[],tick:[],start:[]};
-  for(let raw of src.split('\n')){let line=raw.trim();if(!line||line.startsWith('//'))continue;
-    let ev='start';
-    if(line.startsWith('клик:')){ev='click';line=line.slice(5).trim();}
-    else if(line.startsWith('тик:')){ev='tick';line=line.slice(5).trim();}
-    const c=parseCmd(line);if(c)P[ev].push(c);}
-  let tickAcc=0,started=false;
-  return{
-   onUse:(x,y,api)=>{const tx=Math.floor(x/T),ty=Math.floor(y/T);P.click.forEach(c=>execCmd(c,x,y,tx,ty,api));},
-   onUpdate:(dt,api)=>{
-     if(!started){started=true;const p=api.players()[0]||{x:0,y:0};P.start.forEach(c=>execCmd(c,p.x,p.y,Math.floor(p.x/T),Math.floor(p.y/T),api));}
-     tickAcc+=dt;if(tickAcc>=0.2){tickAcc=0;const p=api.players()[0]||{x:0,y:0};P.tick.forEach(c=>execCmd(c,p.x,p.y,Math.floor(p.x/T),Math.floor(p.y/T),api));}}};
-}
-const ANY_EX='// ЭниЯзык — твой скрипт-предмет ✨ (клавиша 6)\nклик: взрыв 2\nклик: частицы 25 жёлтый\nтик: если близко 3: чат "Опасно!"';
-const JS_EX='// JavaScript\nfunction onUse(x,y,api){\n  api.explode(x,y,2);\n  api.particles(x,y,25,"#ffd23e");\n}\nfunction onUpdate(dt,api){}';
-const LESSONS=[
- {n:'Урок 1 — Привет',t:'Команда чат "текст" пишет в чат. Событие клик: при ударе инструментом ✨ (клавиша 6).',c:'клик: чат "Привет, Эни Блок!"'},
- {n:'Урок 2 — Взрыв и частицы',t:'взрыв R и частицы N цвет в точке клика.',c:'клик: взрыв 2\nклик: частицы 30 оранжевый'},
- {n:'Урок 3 — Стройка',t:'поставь DX DY блок со смещением от клика.',c:'клик: поставь 0 0 кирпич\nклик: поставь 1 0 кирпич\nклик: поставь 0 -1 кирпич'},
- {n:'Урок 4 — Ломай',t:'ломай DX DY — ломает блок со смещением.',c:'клик: ломай 0 0'},
- {n:'Урок 5 — Ракета',t:'ракета VX VY — запускает ракету.',c:'клик: ракета 5 -3'},
- {n:'Урок 6 — Тик',t:'тик: — выполняется каждые 0.2 сек.',c:'тик: частицы 2 жёлтый'},
- {n:'Урок 7 — Условие',t:'если близко N: команда.',c:'тик: если близко 4: взрыв 1'},
- {n:'Урок 8 — Гравитация',t:'гравитация V и прыжок.',c:'клик: гравитация 600\nклик: прыжок'}
-];
-function compileScript(src,lang){
-  if(lang==='js'){if(!src||!src.trim())return null;
-    try{return new Function('"use strict";\n'+src+'\n;return {onUpdate:typeof onUpdate==="function"?onUpdate:null,onUse:typeof onUse==="function"?onUse:null};')();}
-    catch(e){toast('Ошибка JS: '+e.message);return null;}}
-  return compileAny(src||'');
-}
-
-/* ============ ПЕРСОНАЖ (посадка исправлена) ============ */
-function drawItem(c,img,src,cx,cy,w,mode){
-  const hh=w*src[3]/src[2];
-  const y=mode==='bottom'?cy-hh:cy-hh/2;
-  c.drawImage(img,src[0],src[1],src[2],src[3],cx-w/2,y,w,hh);}
-function drawChar(c,x,y,e){
-  const tl=Math.min(5,Math.max(1,e.tool||1));
-  const spr=AS.tool[tl],shirt=AS.shirt[e.skin||'red'];
-  const face=AS.face[e.fc||'none'],glasses=AS.glasses[e.gls||'none'],hatI=AS.hat[e.hat||'none'];
-  const glC=GLASSES.find(q=>q.id===(e.gls||'none'));
-  const hatC=HATS.find(q=>q.id===(e.hat||'none'));
-  if(spr){
-    const sx=40,sy=250,sw=820,sh=830,k=88/sw,dw=88,dh=sh*k;
-    c.save();c.translate(x,y);if((e.face||1)<0)c.scale(-1,1);
-    const ox=-(402-40)*k,oy=46-dh;
-    c.drawImage(spr,sx,sy,sw,sh,ox,oy,dw,dh);
-    if(shirt)c.drawImage(shirt,235,565,335,515,ox+(235-sx)*k,oy+(565-sy)*k,335*k,515*k);
-    const hx=2,hy=-23; // центр головы
-    if(face)drawItem(c,face,[260,250,350,350],hx,hy,39,'center');
-    if(glasses&&glC)drawItem(c,glasses,glC.src,hx+glC.dx,hy+glC.dy,glC.w,'center');
-    if(hatI&&hatC)drawItem(c,hatI,hatC.src,hx+hatC.dx,hy+hatC.dy,hatC.w,'bottom');
-    c.restore();
-  }else{
-    const shirtCol=(SHIRTS.find(s=>s.id===(e.skin||'red'))||SHIRTS[0]).col;
-    const s2=1.7,hxv=x,hyv=y-40;
-    c.strokeStyle='#000';c.lineCap='round';
-    c.fillStyle=shirtCol;c.lineWidth=9;c.beginPath();c.rect(x-28,y-12,56,54);c.fill();c.stroke();
-    c.lineWidth=6;c.beginPath();c.arc(x+10,y+6,8,-1.6,1.6);c.stroke();c.beginPath();c.moveTo(x+15,y-2);c.lineTo(x+3,y+20);c.stroke();
-    c.fillStyle='#f6ec12';c.lineWidth=8;c.beginPath();c.arc(hxv,hyv,30,0,7);c.fill();c.stroke();
-    if(!face){c.lineWidth=5;c.beginPath();c.moveTo(x-15,hyv-6);c.lineTo(x+16,hyv-3);c.stroke();}
-    if(face)drawItem(c,face,[260,250,350,350],hxv,hyv,39*s2,'center');
-    if(glasses&&glC)drawItem(c,glasses,glC.src,hxv+glC.dx*s2,hyv+glC.dy*s2,glC.w*s2,'center');
-    if(hatI&&hatC)drawItem(c,hatI,hatC.src,hxv+hatC.dx*s2,hyv+hatC.dy*s2,hatC.w*s2,'bottom');
-    const hx=x+(e.face>=0?40:-40),hy=y+8;
-    const hand=(px,py)=>{c.fillStyle='#f6ec12';c.lineWidth=7;c.beginPath();c.rect(px-11,py-11,22,22);c.fill();c.stroke();};
-    if(tl===5){hand(x-40,y-24);hand(x+40,y-24);}else hand(hx,hy);
-    if(tl===1){c.strokeStyle='#8f8f8f';c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-24);c.lineTo(hx,hy-66);c.stroke();
-      c.strokeStyle='#f6ec12';c.lineWidth=10;c.beginPath();c.moveTo(hx-19,hy-22);c.lineTo(hx+19,hy-22);c.stroke();
-      c.strokeStyle='#5a5a5a';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-16);c.lineTo(hx,hy+16);c.stroke();}
-    else if(tl===3){c.strokeStyle='#b5764c';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-18);c.lineTo(hx,hy+30);c.stroke();
-      c.fillStyle='#3f3f3f';c.fillRect(hx-24,hy-46,48,28);}
-    else if(tl===4){c.strokeStyle='#8a8a8a';c.lineWidth=26;c.beginPath();c.moveTo(hx-14,hy-26);c.lineTo(hx+16,hy-30);c.stroke();
-      c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-14);c.lineTo(hx,hy+18);c.stroke();}
-  }
-  if(e.name&&!e.self){c.fillStyle='#fff';c.font='12px sans-serif';c.textAlign='center';c.fillText(e.name,x,y-78);}
-  if(G.mode==='battle'&&e.hp!=null){
-    c.fillStyle='#0008';c.fillRect(x-25,y-72,50,6);
-    c.fillStyle=e.hp>40?'#45d155':'#ff5722';c.fillRect(x-25,y-72,50*Math.max(0,e.hp)/100,6);}
-  const ht=G.t-(e.hitT||-9);if(ht>0&&ht<.2){c.fillStyle='#ff000055';c.beginPath();c.arc(x,y-20,34,0,7);c.fill();}}
-function drawPrev(){const c=$('#prevCv').getContext('2d');c.clearRect(0,0,150,170);
-  if(AS.tool[1])drawChar(c,75,112,{tool:1,face:1,skin:skin,hat:hat,gls:gls,fc:fc,self:true});}
-
-/* ============ ОТРИСОВКА ============ */
-function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
-function drawTile(c,t,px,py,custom){const m=modelOf(t,custom);c.save();c.globalAlpha=m.alpha;
-  if(m.grad){const g=c.createLinearGradient(0,py,0,py+T);g.addColorStop(0,m.grad[0]);g.addColorStop(1,m.grad[1]);c.fillStyle=g;}
-  else c.fillStyle=m.bg;
-  if(m.rad>0){rr(c,px,py,T,T,Math.min(m.rad,T/2));c.fill();if(m.border){c.lineWidth=m.border;c.strokeStyle=m.bc;c.stroke();}}
-  else{c.fillRect(px,py,T,T);if(m.border){c.lineWidth=m.border;c.strokeStyle=m.bc;c.strokeRect(px+m.border/2,py+m.border/2,T-m.border,T-m.border);}}
-  c.restore();}
-function camXY(){const s=G.self,vw=cv.clientWidth,vh=cv.clientHeight;
-  return[Math.max(0,Math.min(W*T-vw,s.x-vw/2)),Math.max(0,Math.min(H*T-vh,s.y-vh/2))];}
 function draw(){
-  const vw=cv.width=cv.clientWidth,vh=cv.height=cv.clientHeight,s=G.self;if(!s)return;
-  let[cx,cy]=camXY();
-  if(G.shake>0){cx+=Math.random()*G.shake-G.shake/2;cy+=Math.random()*G.shake-G.shake/2;G.shake*=.85;if(G.shake<.5)G.shake=0;}
-  const g=ctx.createLinearGradient(0,0,0,vh);g.addColorStop(0,'#87ceeb');g.addColorStop(1,'#cfeffb');ctx.fillStyle=g;ctx.fillRect(0,0,vw,vh);
-  const x0=Math.floor(cx/T),x1=Math.ceil((cx+vw)/T),y0=Math.floor(cy/T),y1=Math.ceil((cy+vh)/T);
-  for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){const t=getT(tx,ty);if(t)drawTile(ctx,t,tx*T-cx,ty*T-cy,G.models[t]);}
-  if(G.mouse&&s.tool===3&&G.copyType){ctx.globalAlpha=.4;drawTile(ctx,G.copyType,(G.mouse.x-cx)&~31,(G.mouse.y-cy)&~31);ctx.globalAlpha=1;}
-  if(G.gears)G.gears.forEach(gr=>{if(!gr.got){ctx.save();ctx.translate(gr.x-cx,gr.y-cy);ctx.rotate(G.t*2);
-    ctx.fillStyle='#ffd23e';ctx.font='22px sans-serif';ctx.textAlign='center';ctx.fillText('⚙',0,7);ctx.restore();}});
-  if(G.mode==='parkour'&&G.goalX!=null){const gx=G.goalX-cx,gy=G.goalY-cy;
-    ctx.save();ctx.translate(gx,gy);
-    ctx.fillStyle='#ffd23e';ctx.beginPath();ctx.arc(0,0,16+Math.sin(G.t*4)*2,0,7);ctx.fill();
-    ctx.strokeStyle='#7a4f22';ctx.lineWidth=4;ctx.stroke();
-    ctx.fillStyle='#7a4f22';ctx.font='16px sans-serif';ctx.textAlign='center';ctx.fillText('⚙',0,5);ctx.restore();}
-  if(G.quest&&G.quest.type==='climb'){const ly=G.lavaY-cy;
-    ctx.fillStyle='#ff5722dd';ctx.fillRect(0,ly,vw,vh-ly);
-    ctx.fillStyle='#ffd23e';ctx.fillRect(0,ly,vw,4);}
-  G.rockets.forEach(r=>{ctx.save();ctx.translate(r.x-cx,r.y-cy);ctx.rotate(Math.atan2(r.vy,r.vx));ctx.fillStyle='#8a8a8a';rr(ctx,-10,-4,20,8,4);ctx.fill();ctx.fillStyle='#ff5722';ctx.beginPath();ctx.arc(-12,0,4,0,7);ctx.fill();ctx.restore();});
-  G.parts.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.c;ctx.fillRect(p.x-cx-2,p.y-cy-2,4,4);});ctx.globalAlpha=1;
+  const vw=cv.width,vh=cv.height;
+  ctx.clearRect(0,0,vw,vh);
+  if(!G.self)return;
+  const p=G.self;
+  let cx=p.x-vw/2,cy=p.y-vh/2;
+  if(cx<0)cx=0;if(cy<0)cy=0;if(cx>W*T-vw)cx=W*T-vw;if(cy>H*T-vh)cy=H*T-vh;
+  if(G.shake>0){cx+=(Math.random()-.5)*G.shake;cy+=(Math.random()-.5)*G.shake;G.shake*=.9;if(G.shake<.5)G.shake=0;}
+  
+  // Небо
+  ctx.fillStyle='#87ceeb';ctx.fillRect(0,0,vw,vh);
+  
+  // Блоки
+  const sx=Math.floor(cx/T),ex=Math.floor((cx+vw)/T)+1,sy=Math.floor(cy/T),ey=Math.floor((cy+vh)/T)+1;
+  for(let y=sy;y<ey;y++)for(let x=sx;x<ex;x++){
+    if(!inB(x,y))continue;const t=world[y*W+x];if(!t)continue;
+    const m=modelOf(t,G.models[t]);
+    const px=x*T-cx,py=y*T-cy;
+    if(m.grad){const g=ctx.createLinearGradient(px,py,px,py+T);g.addColorStop(0,m.grad[0]);g.addColorStop(1,m.grad[1]);ctx.fillStyle=g;}
+    else ctx.fillStyle=m.bg;
+    ctx.globalAlpha=m.alpha;
+    ctx.beginPath();ctx.roundRect(px+m.border,py+m.border,T-m.border*2,T-m.border*2,m.rad);ctx.fill();
+    if(m.border>0){ctx.strokeStyle=m.bc;ctx.lineWidth=m.border;ctx.stroke();}
+    ctx.globalAlpha=1;
+  }
+  
+  // Цель квеста
+  if(G.goalX){ctx.fillStyle='#ffd23e';ctx.beginPath();ctx.arc(G.goalX-cx,G.goalY-cy,12,0,Math.PI*2);ctx.fill();ctx.fillStyle='#000';ctx.font='12px sans';ctx.fillText('⚙',G.goalX-cx-6,G.goalY-cy+4);}
+  
+  // Шестерёнки
+  if(G.gears)G.gears.forEach(g=>{if(!g.got){ctx.fillStyle='#aaa';ctx.beginPath();ctx.arc(g.x-cx,g.y-cy,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='#000';ctx.fillText('⚙',g.x-cx-5,g.y-cy+4);}});
+  
+  // Частицы
+  G.parts.forEach((pt,i)=>{pt.life-=0.016;pt.x+=pt.vx*0.016;pt.y+=pt.vy*0.016;pt.vy+=20*0.016;
+    if(pt.life<=0){G.parts.splice(i,1);return;}
+    ctx.globalAlpha=pt.life;ctx.fillStyle=pt.c;ctx.fillRect(pt.x-cx,pt.y-cy,4,4);ctx.globalAlpha=1;});
+  
+  // Боты
   G.bots.forEach(b=>drawChar(ctx,b.x-cx,b.y-cy,b));
-  drawChar(ctx,s.x-cx,s.y-cy,{...s,self:true,name:null});
-  if(G.quest){let txt=(QTYPE[G.quest.type]||'')+': '+G.quest.n;
-    if(G.quest.type==='collect'&&G.gears)txt+=' ⚙ '+G.gears.filter(q=>q.got).length+'/'+G.gears.length;
-    if(G.quest.type==='timer')txt+=' ⏰ '+Math.max(0,Math.ceil(G.timeLeft));
-    if(G.quest.type==='waves')txt+=' 🌊 '+G.wave+'/3';
-    if(G.quest.type==='boss'&&G.bots[0])txt+=' 👑 '+Math.max(0,Math.round(G.bots[0].hp))+'/300';
-    ctx.fillStyle='#fff';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=4;
-    ctx.fillText(txt,vw/2,86);ctx.shadowBlur=0;}
+  // Игрок
+  drawChar(ctx,p.x-cx,p.y-cy,p);
+  
+  // Лава в квесте
+  if(G.lavaY){ctx.fillStyle='#ff5722';ctx.fillRect(0,G.lavaY-cy,vw,vh-(G.lavaY-cy));}
+  
+  // GUI оверлей
+  if(G.guiHtml){$('#guiOverlay').innerHTML=G.guiHtml;}
 }
+function loop(ts){
+  if(!G.running)return;
+  const dt=Math.min(0.05,(ts-lastTime)/1000);lastTime=ts;G.t+=dt;
+  
+  // Логика квестов
+  if(G.quest){
+    if(G.quest.type==='timer'){G.timeLeft-=dt;if(G.timeLeft<=0){death(G.self,'время');G.running=false;toast('Время вышло!');setTimeout(()=>show('menu'),1500);}}
+    if(G.quest.type==='climb'){G.lavaY-=G.lavaSpeed*dt;if(G.self.y>G.lavaY)death(G.self,'лава');}
+    if(G.goalX&&Math.hypot(G.self.x-G.goalX,G.self.y-G.goalY)<40){
+      toast('Квест выполнен! +30⭐');addXp(30);giveReward(G.quest.r);
+      const done=store.get('bb_qdone',[]);if(!done.includes(G.quest.id)){done.push(G.quest.id);store.set('bb_qdone',done);}
+      G.running=false;setTimeout(()=>show('menu'),1500);
+    }
+    if(G.gears){let all=true;G.gears.forEach(g=>{if(!g.got&&Math.hypot(G.self.x-g.x,G.self.y-g.y)<30){g.got=true;toast('+1 ⚙');}});
+      if(G.gears.every(g=>g.got)){toast('Все шестерёнки собраны!');addXp(30);giveReward(G.quest.r);G.running=false;setTimeout(()=>show('menu'),1500);}}
+  }
+  
+  // Физика игрока
+  if(G.self){phys(G.self,dt,G.inp);
+    // Сбор монет/ящиков
+    const tx=Math.floor(G.self.x/T),ty=Math.floor(G.self.y/T);
+    if(getT(tx,ty)===7){world[ty*W+tx]=0;addCoins(5);spawnParts(G.self.x,G.self.y,10,'#ffd23e');}
+  }
+  
+  // Боты
+  G.bots.forEach(b=>{
+    const inp={left:0,right:0,jump:0,down:0};
+    if(G.self){
+      if(b.x<G.self.x-50)inp.right=1;else if(b.x>G.self.x+50)inp.left=1;
+      if(b.y>G.self.y+50&&b.onGround)inp.jump=1;
+      if(Math.abs(b.x-G.self.x)<60&&Math.abs(b.y-G.self.y)<40){
+        if(b.tool===1)meleeSwing(b,b.name,b.x+(b.face>0?30:-30),b.y);
+        if(b.tool===4&&G.t-b.cd>1.5){G.rockets.push({x:b.x,y:b.y,vx:b.face*400,vy:-200,life:3,src:b.name});b.cd=G.t;}
+      }
+    }
+    phys(b,dt,inp);
+  });
+  
+  // Ракеты
+  G.rockets.forEach((r,i)=>{r.life-=dt;r.x+=r.vx*dt;r.y+=r.vy*dt;r.vy+=100*dt;
+    if(r.life<=0||tileAt(r.x,r.y)!==0){explode(r.x,r.y,3,r.src);G.rockets.splice(i,1);}
+    else{[G.self,...G.bots].forEach(p=>{if(p&&Math.hypot(p.x-r.x,p.y-r.y)<20)hurt(p,40,r.src);});}
+  });
+  
+  // Скрипт
+  if(G.script&&G.script.onTick)try{G.script.onTick(makeApi());}catch(e){console.error(e);}
+  
+  draw();
+  requestAnimationFrame(loop);
+}
+let lastTime=0;
+function startGame(opt={}){
+  G.running=true;G.mode=opt.mode||'battle';G.quest=opt.quest;G.script=opt.project?parseScript(opt.project.script,opt.project.scriptLang):null;
+  G.models=opt.project?opt.project.models:{};G.guiHtml=opt.project?opt.project.gui:'';
+  G.t=0;G.shake=0;G.bots=[];G.rockets=[];G.parts=[];G.chat=[];G.inp={left:0,right:0,down:0,jump:0};
+  G.spawnX=80*T;G.spawnY=40*T;G.goalX=null;G.goalY=null;G.gears=null;G.lavaY=0;G.timeLeft=0;
+  
+  if(G.quest){
+    if(G.quest.type==='parkour')genParkour(G.quest.diff);
+    else if(G.quest.type==='collect')genCollect(G.quest.count,G.quest.diff);
+    else if(G.quest.type==='timer')genParkour(G.quest.diff);
+    else if(G.quest.type==='climb')genClimb(G.quest.diff,G.quest.speed);
+    else if(G.quest.type==='boss'){genArena();spawnBoss();}
+    else if(G.quest.type==='waves'){genArena();G.wave=0;nextWave();}
+  }else if(G.mode==='sandbox'){genWorld();}
+  else{genBattle();for(let i=0;i<6;i++)spawnBot();}
+  
+  G.self={x:G.spawnX,y:G.spawnY,vx:0,vy:0,hw:15,hh:30,onGround:false,face:1,air:0,dropT:0,slam:false,
+    skin:skin,hat:hat,gls:gls,fc:fc,col:(SHIRTS.find(s=>s.id===skin)||SHIRTS[0]).col,tool:2,hp:100};
+  
+  show('game');resizeCanvas();lastTime=performance.now();requestAnimationFrame(loop);
+  buildToolBar();
+}
+function spawnBot(){
+  const names=['Алекс','Макс','Бот1','Бот2','Нуб','Про'];
+  const b={x:G.spawnX+(Math.random()*200-100),y:G.spawnY-100,vx:0,vy:0,hw:15,hh:30,onGround:false,face:1,air:0,dropT:0,slam:false,
+    skin:SHIRTS[Math.floor(Math.random()*SHIRTS.length)].id,hat:'none',gls:'none',fc:'none',col:'#fff',tool:Math.random()>0.5?1:4,hp:100,name:names[Math.floor(Math.random()*names.length)],cd:0};
+  G.bots.push(b);
+}
+function spawnBoss(){
+  const b={x:W*T/2,y:H*T/2-100,vx:0,vy:0,hw:25,hh:50,onGround:false,face:1,air:0,dropT:0,slam:false,
+    skin:'burg',hat:'topp',gls:'g_yellow',fc:'f_sly',col:'#8f0322',tool:1,hp:300,name:'БОСС РЖАВЫЙ',cd:0};
+  G.bots.push(b);
+}
+function nextWave(){
+  if(G.wave>=3){toast('Победа!');addXp(30);giveReward(QUESTS.find(q=>q.id==='q8').r);G.running=false;setTimeout(()=>show('menu'),1500);return;}
+  G.wave++;toast('Волна '+G.wave);
+  for(let i=0;i<2+G.wave;i++)spawnBot();
+}
+function resizeCanvas(){cv.width=cv.clientWidth;cv.height=cv.clientHeight;}
+window.addEventListener('resize',resizeCanvas);
 
-/* ============ ЦИКЛ ============ */
-let last=0;
-function loop(ts){if(!G.running)return;const dt=Math.min(.033,(ts-last)/1000||.016);last=ts;G.t+=dt;G.cd=Math.max(0,G.cd-dt);G.brkCd=Math.max(0,G.brkCd-dt);
-  const inp={...G.inp};G.inp.jump=0;
-  phys(G.self,dt,inp);
-  if(G.mode==='battle'){[G.self,...G.bots].forEach(p=>{if(p&&G.t-(p.hitT||-9)>3)p.hp=Math.min(100,(p.hp==null?100:p.hp)+12*dt);});}
-  if(G.mouseHeld&&G.mouse){
-    if(G.mouseBtn===2){if(G.brkCd<=0){G.brkCd=.18;useTool(G.mouse.x,G.mouse.y,2);}}
-    else if([1,2,4,6].includes(G.self.tool))useTool(G.mouse.x,G.mouse.y,0);}
-  G.bots.forEach(b=>botStep(b,dt));
-  for(let i=G.rockets.length-1;i>=0;i--){const r=G.rockets[i];r.vy+=G.gravity*.25*dt;r.x+=r.vx*dt;r.y+=r.vy*dt;r.life-=dt;
-    const t=tileAt(r.x,r.y);if(isSolid(t)||t===6||r.life<=0){explode(r.x,r.y,2.4,r.src);G.rockets.splice(i,1);}}
-  for(let i=G.parts.length-1;i>=0;i--){const p=G.parts[i];p.vy+=900*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)G.parts.splice(i,1);}
-  if(G.script&&G.script.onUpdate){try{G.script.onUpdate(dt,makeApi());}catch(e){}}
-  if(G.quest){const q=G.quest;
-    if((q.type==='parkour'||q.type==='timer'||q.type==='climb')&&G.goalX!=null&&Math.hypot(G.self.x-G.goalX,G.self.y-G.goalY)<60)questDone();
-    if(q.type==='collect'&&G.gears){G.gears.forEach(gr=>{if(!gr.got&&Math.hypot(G.self.x-gr.x,G.self.y-gr.y)<44){gr.got=true;spawnParts(gr.x,gr.y,12,'#ffd23e');}});
-      if(G.gears.every(gr=>gr.got))questDone();}
-    if(q.type==='timer'){G.timeLeft-=dt;
-      if(G.timeLeft<=0){G.timeLeft=q.time;G.self.x=G.spawnX;G.self.y=G.spawnY;G.self.vx=G.self.vy=0;toast('⏰ Не успел! Сначала!');}}
-    if(q.type==='climb'){G.lavaY-=G.lavaSpeed*dt;
-      if(G.self.y+G.self.hh>G.lavaY){G.lavaY=(H-3)*T;G.self.x=G.spawnX;G.self.y=G.spawnY;G.self.vx=G.self.vy=0;toast('🌋 Лава догнала! Сначала!');}}
-    if(q.type==='waves'&&G.bots.length===0){if(G.wave>=3)questDone();else{nextWave();toast('🌊 Волна '+G.wave+'!');}}
-    if(q.type==='boss'&&G.bots.length===0)questDone();}
-  draw();requestAnimationFrame(loop);}
-function questDone(){const q=G.quest;if(!q)return;
-  spawnParts(G.self.x,G.self.y,60,'#ffd23e');
-  const done=store.get('bb_qdone',[]);
-  if(!done.includes(q.id)){done.push(q.id);store.set('bb_qdone',done);giveReward(q.r);addXp(30);toast('🏆 Квест «'+q.n+'» выполнен!');}
-  else{addXp(10);toast('🏆 Финиш! +10⭐');}
-  G.quest=null;G.goalX=null;G.gears=null;}
-
-/* ============ СТАРТ ============ */
-function startGame(opts={}){
-  G.running=true;G.t=0;G.rockets=[];G.parts=[];G.chat=[];G.bots=[];G.script=null;G.models={};
-  G.quest=opts.quest||null;G.gears=null;G.wave=0;G.goalX=null;G.goalY=null;modelCache={};
-  if(opts.project){G.mode=opts.mode||'sandbox';world=decMap(opts.project.map);
-    if(opts.project.script)G.script=compileScript(opts.project.script,opts.project.scriptLang||'any');
-    G.models=opts.project.models||{};
-    $('#guiOverlay').innerHTML=opts.project.gui||'';bindGui($('#guiOverlay'));
-    G.spawnX=(W/2)*T;G.spawnY=surfaceY(W/2)-60;}
-  else if(G.quest){const q=G.quest;
-    if(q.type==='parkour'||q.type==='timer')genParkour(q.diff||0);
-    else if(q.type==='collect')genCollect(q.count||8,q.diff||0);
-    else if(q.type==='climb')genClimb(q.diff||0,q.speed||14);
-    else genArena();
-    G.mode=(q.type==='boss'||q.type==='waves')?'battle':'parkour';
-    if(q.type==='timer')G.timeLeft=q.time;
-    if(q.type==='boss'){const b=makeBot('Босс Ржавый','#8f4f22',1);b.hp=300;b.boss=true;G.bots=[b];}
-    if(q.type==='waves'){nextWave();toast('🌊 Волна 1!');}
-    $('#guiOverlay').innerHTML='';}
-  else{G.mode=opts.mode||'sandbox';
-    if(G.mode==='battle')genBattle();else genWorld();
-    G.spawnX=(W/2)*T;G.spawnY=surfaceY(W/2)-60;
-    $('#guiOverlay').innerHTML='';}
-  G.self={name:user?user.name:'игрок',x:G.spawnX,y:G.spawnY,vx:0,vy:0,hw:17,hh:42,onGround:false,air:0,dropT:0,coyote:0,jbuf:0,face:1,tool:1,hp:100,color:'#e21b1b',skin:skin,hat:hat,gls:gls,fc:fc,self:true};
-  if(G.mode==='battle'&&!G.quest)G.bots=[makeBot('Бот Макс','#1b6ae2',1),makeBot('Бот Лея','#1bbf4b',4),makeBot('Бот Рекс','#ff9800',1)];
-  buildToolBar();updCoins();
-  if(COARSE)goFS();
-  show('game');last=performance.now();requestAnimationFrame(loop);}
-function stopGame(){G.running=false;show('menu');}
-$('#btnBack').onclick=stopGame;
-
-/* ============ ВВОД ============ */
-addEventListener('keydown',e=>{
-  if(!$('#game').classList.contains('hidden')&&e.target.tagName!=='INPUT'){
-    if(['Space','ArrowUp','KeyW'].includes(e.code)){if(!e.repeat)G.inp.jump=1;e.preventDefault();}
-    if(['ArrowLeft','KeyA'].includes(e.code))G.inp.left=1;
-    if(['ArrowRight','KeyD'].includes(e.code))G.inp.right=1;
-    if(['ArrowDown','KeyS'].includes(e.code))G.inp.down=1;
-    const m=e.code.match(/^Digit([1-6])$/);if(m&&G.self){G.self.tool=+m[1];buildToolBar();}}});
-addEventListener('keyup',e=>{
-  if(['ArrowLeft','KeyA'].includes(e.code))G.inp.left=0;
-  if(['ArrowRight','KeyD'].includes(e.code))G.inp.right=0;
-  if(['ArrowDown','KeyS'].includes(e.code))G.inp.down=0;});
-addEventListener('blur',()=>{G.inp.left=0;G.inp.right=0;G.inp.down=0;G.inp.jump=0;G.mouseHeld=false;});
+/* ============ УПРАВЛЕНИЕ ============ */
+// Клавиатура
+window.addEventListener('keydown',e=>{
+  if(e.code==='KeyA'||e.code==='ArrowLeft')G.inp.left=1;
+  if(e.code==='KeyD'||e.code==='ArrowRight')G.inp.right=1;
+  if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')G.inp.jump=1;
+  if(e.code==='KeyS'||e.code==='ArrowDown')G.inp.down=1;
+  if(e.key>='1'&&e.key<='6'){const t=toolList().find(x=>x.id==e.key);if(t)setTool(t.id);}
+});
+window.addEventListener('keyup',e=>{
+  if(e.code==='KeyA'||e.code==='ArrowLeft')G.inp.left=0;
+  if(e.code==='KeyD'||e.code==='ArrowRight')G.inp.right=0;
+  if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')G.inp.jump=0;
+  if(e.code==='KeyS'||e.code==='ArrowDown')G.inp.down=0;
+});
+// Мышь
+cv.addEventListener('mousedown',e=>{
+  G.mouseHeld=true;G.mouseBtn=e.button;handleMouse(e);
+});
+cv.addEventListener('mousemove',e=>{if(G.mouseHeld)handleMouse(e);});
+window.addEventListener('mouseup',()=>{G.mouseHeld=false;});
+function handleMouse(e){
+  if(!G.self)return;const rect=cv.getBoundingClientRect();
+  const mx=e.clientX-rect.left,cy=e.clientY-rect.top;
+  const wx=mx+cx,wy=cy+cy; // cx/cy из draw() нужно глобально, упростим:
+  // Пересчет координат мира из экрана
+  const p=G.self;let camX=p.x-cv.width/2,camY=p.y-cv.height/2;
+  const worldX=mx+camX,worldY=cy+camY;
+  
+  if(G.mouseBtn===0){ // ЛКМ - действие
+    if(G.self.tool===1)meleeSwing(G.self,'self',worldX,worldY);
+    else if(G.self.tool===3){G.copyType=tileAt(worldX,worldY);toast('Скопирован блок '+BLOCKS[G.copyType].n);}
+    else if(G.self.tool===4&&G.t-G.cd>0.5){G.rockets.push({x:G.self.x,y:G.self.y,vx:(worldX-G.self.x)*0.5,vy:(worldY-G.self.y)*0.5,life:3,src:'self'});G.cd=G.t;}
+    else if(G.self.tool===6&&G.script&&G.script.onClick)try{G.script.onClick(makeApi(),worldX,worldY);}catch(e){}
+    else if(G.self.tool===2||G.self.tool===5){ // Ставить блок
+       const tx=Math.floor(worldX/T),ty=Math.floor(worldY/T);
+       if(inB(tx,ty)&&world[ty*W+tx]===0){world[ty*W+tx]=G.self.tool===5?6:(G.copyType||1);}
+    }
+  }else if(G.mouseBtn===2){ // ПКМ - ломать
+    const tx=Math.floor(worldX/T),ty=Math.floor(worldY/T);
+    if(inB(tx,ty)&&world[ty*W+tx]!==9)world[ty*W+tx]=0;
+  }
+}
 cv.addEventListener('contextmenu',e=>e.preventDefault());
-cv.addEventListener('pointerdown',e=>{e.preventDefault();const[cx,cy]=camXY();const r=cv.getBoundingClientRect();
-  G.mouse={x:e.clientX-r.left+cx,y:e.clientY-r.top+cy};G.mouseHeld=true;G.mouseBtn=e.button;
-  useTool(G.mouse.x,G.mouse.y,e.button);});
-addEventListener('pointerup',()=>{G.mouseHeld=false;});
-cv.addEventListener('pointermove',e=>{const[cx,cy]=camXY();const r=cv.getBoundingClientRect();G.mouse={x:e.clientX-r.left+cx,y:e.clientY-r.top+cy};});
-function bindGui(root){
-  root.querySelectorAll('[data-action]').forEach(el=>{
-    const a=el.dataset.action,hold=['left','right','down'];
-    if(hold.includes(a)){el.addEventListener('pointerdown',e=>{e.preventDefault();G.inp[a]=1;});['pointerup','pointerleave'].forEach(ev=>el.addEventListener(ev,()=>G.inp[a]=0));}
-    else el.addEventListener('pointerdown',e=>{e.preventDefault();
-      if(a==='jump')G.inp.jump=1;
-      else if(a==='place'||a==='brk')actFront(a);
-      else if(a.startsWith('tool')&&G.self){G.self.tool=+a.slice(4);buildToolBar();}});});}
-bindGui($('#touch'));
-function buildToolBar(){const tb=$('#toolBar');tb.innerHTML='';
-  toolList().forEach(t=>{const b=document.createElement('button');b.innerHTML='<small>'+t.id+'</small>'+t.ic;b.title=t.n;
-    if(G.self&&G.self.tool===t.id)b.classList.add('sel');
-    b.onclick=()=>{if(G.self)G.self.tool=t.id;buildToolBar();};tb.appendChild(b);});}
 
-/* ============ МЕНЮ / КАТАЛОГ ============ */
-$('#btnPlay').onclick=()=>startGame({mode:'battle'});
-$('#btnSand').onclick=()=>startGame({mode:'sandbox'});
-$('#btnStudio').onclick=()=>{show('studio');edInit();};
-$('#btnExpo').onclick=()=>requireAuth(()=>{show('expo');buildExpo();});
-$('#btnShop').onclick=()=>{show('shop');buildShop();};
-$('#shBack').onclick=()=>{show('menu');drawPrev();};
-function equip(kind,id){
-  if(kind==='shirt'){skin=id;store.set('bb_skin',skin);}
-  if(kind==='hat'){hat=id;store.set('bb_hat',hat);}
-  if(kind==='glasses'){gls=id;store.set('bb_gls',gls);}
-  if(kind==='face'){fc=id;store.set('bb_fc',fc);}
-  toast('✔ '+ITEM_INDEX[id].n);drawPrev();}
-function buildShop(){
-  const mkCard=(i,buy)=>{
-    const d=document.createElement('div');d.className='card';
-    const own=owned.includes(i.id)||(i.sp&&true);
-    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
-      '<h3>'+i.n+'</h3>'+
-      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
-    const b=document.createElement('button');
-    if(own){b.textContent='Надеть';b.onclick=()=>equip(i.kind,i.id);}
-    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;owned.push(i.id);store.set(ownedKeyFor(i.kind),owned);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
-    else{b.disabled=true;b.textContent='—';}
-    d.appendChild(b);return d;};
-  const mkHatCard=(i,buy)=>{
-    const d=document.createElement('div');d.className='card';
-    const own=ownedH.includes(i.id)||(i.sp&&true);
-    const c=$('#cssPrev').getContext('2d');c.clearRect(0,0,96,96);
-    if(AS.tool[1]){const temp={tool:1,face:1,skin:'red',hat:i.id,gls:'none',fc:'none',self:true};drawChar(c,48,52,temp);}
-    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
-      '<h3>'+i.n+'</h3>'+
-      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
-    const b=document.createElement('button');
-    if(own){b.textContent='Надеть';b.onclick=()=>equip('hat',i.id);}
-    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;ownedH.push(i.id);store.set('bb_ownedH',ownedH);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
-    else{b.disabled=true;b.textContent='—';}
-    d.appendChild(b);return d;};
-  const mkGlsCard=(i,buy)=>{
-    const d=document.createElement('div');d.className='card';
-    const own=ownedG.includes(i.id)||(i.sp&&true);
-    const c=$('#cssPrev').getContext('2d');c.clearRect(0,0,96,96);
-    if(AS.tool[1]){const temp={tool:1,face:1,skin:'red',hat:'none',gls:i.id,fc:'none',self:true};drawChar(c,48,52,temp);}
-    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
-      '<h3>'+i.n+'</h3>'+
-      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
-    const b=document.createElement('button');
-    if(own){b.textContent='Надеть';b.onclick=()=>equip('glasses',i.id);}
-    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;ownedG.push(i.id);store.set('bb_ownedG',ownedG);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
-    else{b.disabled=true;b.textContent='—';}
-    d.appendChild(b);return d;};
-  const mkFaceCard=(i,buy)=>{
-    const d=document.createElement('div');d.className='card';
-    const own=ownedF.includes(i.id);
-    const c=$('#cssPrev').getContext('2d');c.clearRect(0,0,96,96);
-    if(AS.tool[1]){const temp={tool:1,face:1,skin:'red',hat:'none',gls:'none',fc:i.id,self:true};drawChar(c,48,52,temp);}
-    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
-      '<h3>'+i.n+'</h3>'+
-      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
-    const b=document.createElement('button');
-    if(own){b.textContent='Надеть';b.onclick=()=>equip('face',i.id);}
-    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;ownedF.push(i.id);store.set('bb_ownedF',ownedF);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
-    else{b.disabled=true;b.textContent='—';}
-    d.appendChild(b);return d;};
-  $('#shopShirts').innerHTML='';SHIRTS.forEach(i=>{if(i.id!=='red')$('#shopShirts').appendChild(mkCard(i,true));});
-  $('#shopHats').innerHTML='';HATS.forEach(i=>{if(i.id!=='none')$('#shopHats').appendChild(mkHatCard(i,true));});
-  $('#shopGlasses').innerHTML='';GLASSES.forEach(i=>{if(i.id!=='none')$('#shopGlasses').appendChild(mkGlsCard(i,true));});
-  $('#shopFaces').innerHTML='';FACES.forEach(i=>$('#shopFaces').appendChild(mkFaceCard(i,true)));}
+// Сенсор
+const touchActions={};
+$('#touch').addEventListener('touchstart',e=>{
+  e.preventDefault();
+  for(let i=0;i<e.touches.length;i++){
+    const t=e.touches[i],btn=t.target.closest('button');
+    if(btn){const act=btn.dataset.action;touchActions[t.identifier]=act;
+      if(act==='left')G.inp.left=1;if(act==='right')G.inp.right=1;
+      if(act==='jump')G.inp.jump=1;if(act==='down')G.inp.down=1;
+      if(act==='place'){if(G.self){const tx=Math.floor((G.self.x+ (G.self.face>0?30:-30))/T),ty=Math.floor((G.self.y+20)/T);if(inB(tx,ty)&&world[ty*W+tx]===0)world[ty*W+tx]=G.copyType||1;}}
+      if(act==='brk'){if(G.self){const tx=Math.floor((G.self.x+ (G.self.face>0?30:-30))/T),ty=Math.floor((G.self.y+20)/T);if(inB(tx,ty)&&world[ty*W+tx]!==9)world[ty*W+tx]=0;}}
+    }
+  }
+},{passive:false});
+$('#touch').addEventListener('touchend',e=>{
+  e.preventDefault();
+  for(let i=0;i<e.changedTouches.length;i++){
+    const act=touchActions[e.changedTouches[i].identifier];delete touchActions[e.changedTouches[i].identifier];
+    if(act==='left')G.inp.left=0;if(act==='right')G.inp.right=0;
+    if(act==='jump')G.inp.jump=0;if(act==='down')G.inp.down=0;
+  }
+});
+
+function setTool(id){G.self.tool=id;buildToolBar();}
+function buildToolBar(){
+  const w=$('#toolBar');w.innerHTML='';
+  toolList().forEach(t=>{
+    const b=document.createElement('button');b.textContent=t.ic;b.title=t.n;
+    if(t.id===G.self.tool)b.classList.add('sel');
+    b.onclick=()=>setTool(t.id);
+    if(t.id<=5)b.innerHTML+=`<small>${t.id}</small>`;
+    w.appendChild(b);
+  });
+}
 
 /* ============ СТУДИЯ ============ */
-let edTool=1,edMap=new Uint8Array(W*H);
-const edCv=$('#edCv'),edCtx=edCv.getContext('2d');
-function edInit(){
-  edMap=new Uint8Array(world);
-  edCv.width=edCv.clientWidth;edCv.height=edCv.clientHeight;
-  const pal=$('#palette');pal.innerHTML='';
-  Object.entries(BLOCKS).forEach(([k,v])=>{
-    const b=document.createElement('button');b.style.cssText=v.css;b.title=v.n;
-    if(+k===edTool)b.classList.add('sel');
-    b.onclick=()=>{edTool=+k;pal.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};
-    pal.appendChild(b);});
-  edDraw();}
-function edDraw(){
-  const vw=edCv.width,vh=edCv.height;
-  edCtx.fillStyle='#87ceeb';edCtx.fillRect(0,0,vw,vh);
-  const cw=edCv.clientWidth/W,ch=edCv.clientHeight/H;
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const t=edMap[y*W+x];if(t)drawTile(edCtx,t,x*cw,y*ch);}
+function drawPrev(){
+  const c=$('#prevCv'),x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
+  drawChar(x,75,100,{skin:skin,hat:hat,gls:gls,fc:fc,col:(SHIRTS.find(s=>s.id===skin)||SHIRTS[0]).col,face:1});
 }
-edCv.addEventListener('pointerdown',e=>{
-  const r=edCv.getBoundingClientRect(),cx=(e.clientX-r.left)*W/edCv.clientWidth,cy=(e.clientY-r.top)*H/edCv.clientHeight;
-  const tx=Math.floor(cx),ty=Math.floor(cy);
-  if(inB(tx,ty)){if(e.button===2)edMap[ty*W+tx]=0;else edMap[ty*W+tx]=edTool;edDraw();}
-});
-$('#edNew').onclick=()=>{edMap=new Uint8Array(W*H);edDraw();};
-$('#edLoad').onclick=()=>{edMap=new Uint8Array(world);edDraw();};
+function buildShop(){
+  const sDiv=$('#shopShirts');sDiv.innerHTML='';
+  SHIRTS.forEach(s=>{
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML=`<div class="thumb" style="background:${s.col}"></div><b>${s.n}</b><small>${s.price} 🪙</small>`;
+    const b=document.createElement('button');
+    b.textContent=owned.includes(s.id)?'Надеть':'Купить';
+    b.onclick=()=>{
+      if(owned.includes(s.id)){skin=s.id;store.set('bb_skin',skin);drawPrev();toast('Надето!');}
+      else if(coins>=s.price){coins-=s.price;owned.push(s.id);store.set('bb_coins',coins);store.set('bb_owned',owned);skin=s.id;store.set('bb_skin',skin);drawPrev();updCoins();toast('Куплено!');}
+      else toast('Не хватает монет!');
+    };
+    d.appendChild(b);sDiv.appendChild(d);
+  });
+  // Аналогично для шапок, очков, лиц (сокращено для краткости, логика та же)
+  const hDiv=$('#shopHats');hDiv.innerHTML='';
+  HATS.forEach(h=>{
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML=`<div class="thumb" style="background:#444"></div><b>${h.n}</b><small>${h.price} 🪙</small>`;
+    const b=document.createElement('button');
+    b.textContent=ownedH.includes(h.id)?'Надеть':'Купить';
+    b.onclick=()=>{
+      if(ownedH.includes(h.id)){hat=h.id;store.set('bb_hat',hat);drawPrev();toast('Надето!');}
+      else if(coins>=h.price){coins-=h.price;ownedH.push(h.id);store.set('bb_coins',coins);store.set('bb_ownedH',ownedH);hat=h.id;store.set('bb_hat',hat);drawPrev();updCoins();toast('Куплено!');}
+      else toast('Не хватает монет!');
+    };
+    d.appendChild(b);hDiv.appendChild(d);
+  });
+  // Очки и лица аналогично...
+  const gDiv=$('#shopGlasses');gDiv.innerHTML='';
+  GLASSES.forEach(g=>{
+     const d=document.createElement('div');d.className='card';
+     d.innerHTML=`<div class="thumb" style="background:#444"></div><b>${g.n}</b><small>${g.price} 🪙</small>`;
+     const b=document.createElement('button');
+     b.textContent=ownedG.includes(g.id)?'Надеть':'Купить';
+     b.onclick=()=>{
+       if(ownedG.includes(g.id)){gls=g.id;store.set('bb_gls',gls);drawPrev();toast('Надето!');}
+       else if(coins>=g.price){coins-=g.price;ownedG.push(g.id);store.set('bb_coins',coins);store.set('bb_ownedG',ownedG);gls=g.id;store.set('bb_gls',gls);drawPrev();updCoins();toast('Куплено!');}
+       else toast('Не хватает монет!');
+     };
+     d.appendChild(b);gDiv.appendChild(d);
+  });
+  const fDiv=$('#shopFaces');fDiv.innerHTML='';
+  FACES.forEach(f=>{
+     const d=document.createElement('div');d.className='card';
+     d.innerHTML=`<div class="thumb" style="background:#444"></div><b>${f.n}</b><small>${f.price} 🪙</small>`;
+     const b=document.createElement('button');
+     b.textContent=ownedF.includes(f.id)?'Надеть':'Купить';
+     b.onclick=()=>{
+       if(ownedF.includes(f.id)){fc=f.id;store.set('bb_fc',fc);drawPrev();toast('Надето!');}
+       else if(coins>=f.price){coins-=f.price;ownedF.push(f.id);store.set('bb_coins',coins);store.set('bb_ownedF',ownedF);fc=f.id;store.set('bb_fc',fc);drawPrev();updCoins();toast('Куплено!');}
+       else toast('Не хватает монет!');
+     };
+     d.appendChild(b);fDiv.appendChild(d);
+  });
+}
+$('#btnShop').onclick=()=>{show('shop');buildShop();updCoins();};
+$('#shBack').onclick=()=>show('menu');
 
-/* Вкладки студии */
-$('.tabs').onclick=e=>{if(e.target.dataset.tab){
-  $('.tabs .sel')?.classList.remove('sel');e.target.classList.add('sel');
-  $('.panel:not(.hidden)').classList.add('hidden');$('#tab-'+e.target.dataset.tab).classList.remove('hidden');
-}};
-$('#scrTxt').value=ANY_EX;
-$('#cssBlock').innerHTML=Object.entries(BLOCKS).map(([k,v])=>'<option value="'+k+'">'+v.n+'</option>').join('');
-$('#cssApply').onclick=()=>{const t=$('#cssBlock').value,v=$('#cssTxt').value.trim();G.models[t]=v;toast('Применено к блоку: '+BLOCKS[t].n);};
-$('#scrCheck').onclick=()=>{const src=$('#scrTxt').value,lang=$('#langSel').value;
-  if(compileScript(src,lang)){toast('✓ Код проверен!');}else toast('✘ Ошибка в коде');};
-$('#lesCards').innerHTML='';LESSONS.forEach(l=>{
-  const d=document.createElement('div');d.className='card';
-  d.innerHTML='<h3>'+l.n+'</h3><div style="font-size:13px;opacity:.8">'+l.t+'</div><pre>'+l.c+'</pre>';
-  const b=document.createElement('button');b.textContent='Загрузить';b.onclick=()=>{$('#scrTxt').value=l.c;$('#langSel').value='any';$('.tabs [data-tab="scr"]').click();};
-  d.appendChild(b);$('#lesCards').appendChild(d);});
+// Студия: палитра
+const edCv=$('#edCv'),edCtx=edCv.getContext('2d');
+let edSel=1,edDrag=false,edRm=false;
+function drawEd(){
+  edCv.width=edCv.clientWidth;edCv.height=edCv.clientHeight;
+  const sc=Math.min(edCv.width/(W*T),edCv.height/(H*T));
+  edCtx.clearRect(0,0,edCv.width,edCv.height);
+  edCtx.save();edCtx.scale(sc,sc);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const t=world[y*W+x];if(!t)continue;
+    const m=modelOf(t);
+    if(m.grad){const g=edCtx.createLinearGradient(x*T,y*T,x*T,y*T+T);g.addColorStop(0,m.grad[0]);g.addColorStop(1,m.grad[1]);edCtx.fillStyle=g;}
+    else edCtx.fillStyle=m.bg;
+    edCtx.fillRect(x*T,y*T,T,T);
+  }
+  edCtx.restore();
+}
+function buildPalette(){
+  const w=$('#palette');w.innerHTML='';
+  Object.keys(BLOCKS).forEach(k=>{
+    const b=document.createElement('button');b.style.background=BLOCKS[k].css.match(/background:[^;]+/)?.[0]?.split(':')[1]||'#888';
+    if(+k===edSel)b.classList.add('sel');
+    b.onclick=()=>{edSel=+k;buildPalette();};
+    w.appendChild(b);
+  });
+}
+edCv.addEventListener('mousedown',e=>{edDrag=true;edRm=e.button===2;paintEd(e);});
+edCv.addEventListener('mousemove',e=>{if(edDrag)paintEd(e);});
+window.addEventListener('mouseup',()=>edDrag=false);
+function paintEd(e){
+  const rect=edCv.getBoundingClientRect();
+  const sc=Math.min(edCv.width/(W*T),edCv.height/(H*T));
+  const x=Math.floor((e.clientX-rect.left)/sc/T),y=Math.floor((e.clientY-rect.top)/sc/T);
+  if(inB(x,y)){world[y*W+x]=edRm?0:edSel;drawEd();}
+}
+$('#edNew').onclick=()=>{genWorld();drawEd();};
+$('#edLoad').onclick=()=>{world=decMap(encMap(world));drawEd();};
 
-/* Сохранение проектов */
+// Вкладки студии
+$('.tabs').onclick=e=>{
+  if(e.target.dataset.tab){
+    $('.tabs .sel').classList.remove('sel');e.target.classList.add('sel');
+    $('.panel-content').classList.add('hidden');$('#tab-'+e.target.dataset.tab).classList.remove('hidden');
+    if(e.target.dataset.tab==='css')buildCssTab();
+  }
+};
+function buildCssTab(){
+  const sel=$('#cssBlock');sel.innerHTML='';
+  Object.keys(BLOCKS).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=BLOCKS[k].n;sel.appendChild(o);});
+  sel.onchange=()=>{$('#cssTxt').value=G.models[sel.value]||BLOCKS[sel.value].css;updateCssPrev();};
+  sel.dispatchEvent(new Event('change'));
+}
+function updateCssPrev(){
+  const c=$('#cssPrev');c.style.cssText=$('#cssTxt').value;
+}
+$('#cssTxt').oninput=updateCssPrev;
+$('#cssApply').onclick=()=>{G.models[$('#cssBlock').value]=$('#cssTxt').value;toast('Применено в тесте!');};
+
+// Скрипт
+function parseScript(code,lang){
+  if(lang==='js'){try{return new Function('api',code+'\nreturn{onTick:typeof onTick==="function"?onTick:null,onClick:typeof onClick==="function"?onClick:null,onUse:typeof onUse==="function"?onUse:null};')();}catch(e){toast('Ошибка JS: '+e.message);return null;}}
+  // Парсер ЭниЯзыка (упрощенный)
+  const res={onTick:null,onClick:null,onUse:null};
+  const lines=code.split('\n');
+  let mode=null,body=[];
+  lines.forEach(l=>{
+    l=l.trim();if(!l)return;
+    if(l.endsWith(':')){mode=l.slice(0,-1);body=[];return;}
+    if(mode){
+      body.push(l);
+      if(mode==='клик')res.onClick=(api,x,y)=>runAny(body,api,x,y);
+      if(mode==='тик')res.onTick=(api)=>runAny(body,api);
+      if(mode==='использовать')res.onUse=(api)=>runAny(body,api);
+    }
+  });
+  return res;
+}
+function runAny(lines,api,x,y){
+  const apiObj=api();
+  lines.forEach(l=>{
+    const m=l.match(/взрыв\s+(\d+)/);if(m)return apiObj.explode(x||0,y||0,+m[1]);
+    m=l.match(/частицы\s+(\d+)\s+(\w+)/);if(m)return apiObj.particles(x||0,y||0,+m[1],m[2]);
+    m=l.match(/поставь\s+(-?\d+)\s+(-?\d+)\s+(\d+)/);if(m)return apiObj.place(Math.floor((x||0)/T)+ +m[1],Math.floor((y||0)/T)+ +m[2],+m[3]);
+    m=l.match(/ломай\s+(-?\d+)\s+(-?\d+)/);if(m)return apiObj.break(Math.floor((x||0)/T)+ +m[1],Math.floor((y||0)/T)+ +m[2]);
+    m=l.match(/ракета\s+(-?\d+)\s+(-?\d+)/);if(m)return apiObj.rocket(x||0,y||0,+m[1],+m[2]);
+    m=l.match(/гравитация\s+(\d+)/);if(m)return apiObj.setGravity(+m[1]);
+    m=l.match(/прыжок/);if(m)return apiObj.jump();
+    m=l.match(/чат\s+"([^"]+)"/);if(m)return apiObj.chat(m[1]);
+    m=l.match(/если близко\s+(\d+):\s*(.+)/);if(m){
+       const dist=+m[1],cmd=m[2];
+       apiObj.players().forEach(p=>{if(p.name!=='вы'&&Math.hypot(p.x-(x||0),p.y-(y||0))<dist*T)runAny([cmd],api,x,y);});
+    }
+  });
+}
+$('#scrCheck').onclick=()=>{parseScript($('#scrTxt').value,$('#langSel').value);toast('Синтаксис ОК');};
+
+// Сохранение проекта
 function saveProject(pub){
-  const map=encMap(edMap),script=$('#scrTxt').value,lang=$('#langSel').value,css={},gui=$('#guiTxt').value;
+  const map=encMap(world),script=$('#scrTxt').value,lang=$('#langSel').value,css={},gui=$('#guiTxt').value;
   Object.keys(G.models).forEach(k=>css[k]=G.models[k]);
   const proj={name:$('#pName').value,map,script,scriptLang:lang,models:css,gui,pub};
   const all=store.get('bb_projects',[]);all.push(proj);store.set('bb_projects',all);
@@ -1134,7 +1033,7 @@ function saveProject(pub){
 $('#pSave').onclick=()=>saveProject(false);
 $('#pPub').onclick=()=>requireAuth(()=>saveProject(true));
 $('#pTest').onclick=()=>{
-  const map=encMap(edMap),script=$('#scrTxt').value,lang=$('#langSel').value,css={},gui=$('#guiTxt').value;
+  const map=encMap(world),script=$('#scrTxt').value,lang=$('#langSel').value,css={},gui=$('#guiTxt').value;
   Object.keys(G.models).forEach(k=>css[k]=G.models[k]);
   startGame({mode:'sandbox',project:{map,script,scriptLang:lang,models:css,gui}});};
 
@@ -1148,8 +1047,17 @@ function buildExpo(){
     d.innerHTML='<h3>'+p.name+'</h3><div style="font-size:12px;opacity:.7">Автор: '+ (user?.name||'Аноним') +'</div>';
     const b=document.createElement('button');b.textContent='Играть';b.onclick=()=>startGame({mode:'sandbox',project:p});
     d.appendChild(b);w.appendChild(d);});}
+$('#btnExpo').onclick=()=>{requireAuth(()=>{show('expo');buildExpo();});};
+$('#exBack').onclick=()=>show('menu');
 
-// Запуск музыки при загрузке
+// Инициализация
+$('#btnPlay').onclick=()=>startGame('battle');
+$('#btnSand').onclick=()=>startGame('sandbox');
+$('#btnBack').onclick=()=>{G.running=false;show('menu');};
+$('#stBack').onclick=()=>show('menu');
+
+// Запуск
+genWorld();drawEd();buildPalette();
 initMusic();
 </script>
 </body>
