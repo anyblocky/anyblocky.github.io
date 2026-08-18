@@ -226,6 +226,14 @@ let owned=store.get('bb_owned',['red']);
 let ownedH=store.get('bb_ownedH',['none']);
 let ownedG=store.get('bb_ownedG',['none']);
 let ownedF=store.get('bb_ownedF',['none']);
+
+// --- ИСПРАВЛЕНИЕ 1: Инициализация переменных ---
+// Если текущие значения не в списке владения, установить первое доступное.
+if (!owned.includes(skin)) skin = owned[0] || 'red';
+if (!ownedH.includes(hat)) hat = ownedH[0] || 'none';
+if (!ownedG.includes(gls)) gls = ownedG[0] || 'none';
+if (!ownedF.includes(fc)) fc = ownedF[0] || 'none';
+
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2600);}
 const COARSE=matchMedia('(pointer:coarse)').matches;
 if(COARSE)document.body.classList.add('coarse');
@@ -240,7 +248,7 @@ function goFS(){const el=document.documentElement;
   }catch(e){}}
 $('#btnFS').onclick=goFS;
 
-/* ============ ВЕЩИ (посадка исправлена: шапки — низом на макушку, очки — по глазам) ============ */
+/* ============ ВЕЩИ ============ */
 const SHIRTS=[
  {id:'red',n:'Классическая красная',price:0,file:null,col:'#e21b1b',kind:'shirt'},
  {id:'pink',n:'Розовая',price:50,file:'shirt1.png',col:'#e01866',kind:'shirt'},
@@ -250,7 +258,6 @@ const SHIRTS=[
  {id:'green',n:'Зелёная',price:150,file:'shirt5.png',col:'#45d155',kind:'shirt'},
  {id:'sp_tie',n:'⚙ Костюм с галстуком',price:0,file:'shirt_sp.png',col:'#7a4a1f',kind:'shirt',sp:true}
 ];
-/* dy у шапок = отступ НИЗА шапки от центра головы (низ прижат к макушке) */
 const HATS=[
  {id:'none',n:'Без шапки',price:0,file:null,src:null,w:0,dx:0,dy:0,kind:'hat'},
  {id:'hammer',n:'Шапка-молоток',price:200,file:'hat1.png',src:[160,265,225,250],w:34,dx:6,dy:-30,kind:'hat'},
@@ -261,7 +268,6 @@ const HATS=[
  {id:'sp_beret',n:'⚙ Берет инженера',price:0,file:'sp_beret.png',src:[140,265,220,125],w:40,dx:0,dy:-30,kind:'hat',sp:true},
  {id:'sp_gearhat',n:'⚙ Котелок с шестерёнкой',price:0,file:'sp_gearhat.png',src:[70,260,275,190],w:42,dx:0,dy:-32,kind:'hat',sp:true}
 ];
-/* dy у очков = смещение ЦЕНТРА от центра головы (линия глаз ≈ -2) */
 const GLASSES=[
  {id:'g_yellow',n:'Жёлтые очки',price:100,file:'gl_yellow.png',src:[115,295,240,110],w:40,dx:0,dy:-2,kind:'glasses'},
  {id:'sp_grid',n:'⚙ Очки с сеткой',price:0,file:'sp_grid.png',src:[115,295,240,110],w:40,dx:0,dy:-2,kind:'glasses',sp:true},
@@ -295,7 +301,217 @@ function chroma(img){const c=document.createElement('canvas');c.width=img.width;
   drawPrev();buildShop();
 })();
 
-/* ============ БЛОКИ / МИР ============ */
+/* ============ ПЕРСОНАЖ ============ */
+function drawItem(c,img,src,cx,cy,w,mode){
+  // --- ИСПРАВЛЕНИЕ 2: Безопасная отрисовка ---
+  if (!img || !src) return;
+  const hh=w*src[3]/src[2];
+  const y=mode==='bottom'?cy-hh:cy-hh/2;
+  c.drawImage(img,src[0],src[1],src[2],src[3],cx-w/2,y,w,hh);
+}
+
+function drawChar(c,x,y,e){
+  const tl=Math.min(5,Math.max(1,e.tool||1));
+  const spr=AS.tool[tl];
+  const shirt=AS.shirt[e.skin||'red'];
+  const face=AS.face[e.fc||'none'];
+  const glasses=AS.glasses[e.gls||'none'];
+  const hatI=AS.hat[e.hat||'none'];
+
+  const glC=GLASSES.find(q=>q.id===(e.gls||'none'));
+  const hatC=HATS.find(q=>q.id===(e.hat||'none'));
+
+  if(spr){
+    const sx=40,sy=250,sw=820,sh=830,k=88/sw,dw=88,dh=sh*k;
+    c.save();c.translate(x,y);if((e.face||1)<0)c.scale(-1,1);
+    const ox=-(402-40)*k,oy=46-dh;
+    c.drawImage(spr,sx,sy,sw,sh,ox,oy,dw,dh);
+    if(shirt)c.drawImage(shirt,235,565,335,515,ox+(235-sx)*k,oy+(565-sy)*k,335*k,515*k);
+
+    // --- ИСПРАВЛЕНИЕ 3: Центр головы и позиционирование ---
+    const hx=2,hy=-23; // Центр головы
+
+    // Рисуем лицо с белыми зрачками (для f_lol)
+    if(face){
+      // Принудительно устанавливаем белый цвет для зрачков, если это весельчак
+      if(e.fc === 'f_lol') {
+        c.fillStyle = '#fff';
+        c.font = '12px sans-serif';
+        c.textAlign = 'center';
+        c.fillText('👁', hx, hy - 10); // Просто текст для демонстрации, можно заменить на drawImage
+      }
+      drawItem(c, face, [260, 250, 350, 350], hx, hy, 39, 'center');
+    }
+
+    if(glasses && glC){
+      // --- ИСПРАВЛЕНИЕ 4: Позиционирование очков ---
+      // Добавляем небольшой сдвиг вниз для точного совпадения с глазами
+      drawItem(c, glasses, glC.src, hx + glC.dx, hy + glC.dy + 2, glC.w, 'center');
+    }
+
+    if(hatI && hatC){
+      // --- ИСПРАВЛЕНИЕ 5: Позиционирование шапок ---
+      // Используем режим 'bottom' и добавляем сдвиг вниз, чтобы шапка сидела на макушке
+      drawItem(c, hatI, hatC.src, hx + hatC.dx, hy + hatC.dy - 5, hatC.w, 'bottom');
+    }
+
+    c.restore();
+  }else{
+    // Резервный вариант без спрайтов
+    const shirtCol=(SHIRTS.find(s=>s.id===(e.skin||'red'))||SHIRTS[0]).col;
+    const s2=1.7,hxv=x,hyv=y-40;
+    c.strokeStyle='#000';c.lineCap='round';
+    c.fillStyle=shirtCol;c.lineWidth=9;c.beginPath();c.rect(x-28,y-12,56,54);c.fill();c.stroke();
+    c.lineWidth=6;c.beginPath();c.arc(x+10,y+6,8,-1.6,1.6);c.stroke();c.beginPath();c.moveTo(x+15,y-2);c.lineTo(x+3,y+20);c.stroke();
+    c.fillStyle='#f6ec12';c.lineWidth=8;c.beginPath();c.arc(hxv,hyv,30,0,7);c.fill();c.stroke();
+
+    // --- ИСПРАВЛЕНИЕ 6: Зрачки для резервного варианта ---
+    if(e.fc === 'f_lol') {
+      c.fillStyle = '#fff';
+      c.font = '12px sans-serif';
+      c.textAlign = 'center';
+      c.fillText('👁', x, y - 50);
+    }
+
+    if(face)drawItem(c, face, [260,250,350,350],hxv,hyv,39*s2,'center');
+    if(glasses&&glC)drawItem(c,glasses,glC.src,hxv+glC.dx*s2,hyv+glC.dy*s2+2,glC.w*s2,'center');
+    if(hatI&&hatC)drawItem(c,hatI,hatC.src,hxv+hatC.dx*s2,hyv+hatC.dy*s2-5,hatC.w*s2,'bottom');
+
+    const hx=x+(e.face>=0?40:-40),hy=y+8;
+    const hand=(px,py)=>{c.fillStyle='#f6ec12';c.lineWidth=7;c.beginPath();c.rect(px-11,py-11,22,22);c.fill();c.stroke();};
+    if(tl===5){hand(x-40,y-24);hand(x+40,y-24);}else hand(hx,hy);
+    if(tl===1){c.strokeStyle='#8f8f8f';c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-24);c.lineTo(hx,hy-66);c.stroke();
+      c.strokeStyle='#f6ec12';c.lineWidth=10;c.beginPath();c.moveTo(hx-19,hy-22);c.lineTo(hx+19,hy-22);c.stroke();
+      c.strokeStyle='#5a5a5a';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-16);c.lineTo(hx,hy+16);c.stroke();}
+    else if(tl===3){c.strokeStyle='#b5764c';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-18);c.lineTo(hx,hy+30);c.stroke();
+      c.fillStyle='#3f3f3f';c.fillRect(hx-24,hy-46,48,28);}
+    else if(tl===4){c.strokeStyle='#8a8a8a';c.lineWidth=26;c.beginPath();c.moveTo(hx-14,hy-26);c.lineTo(hx+16,hy-30);c.stroke();
+      c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-14);c.lineTo(hx,hy+18);c.stroke();}
+  }
+  if(e.name&&!e.self){c.fillStyle='#fff';c.font='12px sans-serif';c.textAlign='center';c.fillText(e.name,x,y-78);}
+  if(G.mode==='battle'&&e.hp!=null){
+    c.fillStyle='#0008';c.fillRect(x-25,y-72,50,6);
+    c.fillStyle=e.hp>40?'#45d155':'#ff5722';c.fillRect(x-25,y-72,50*Math.max(0,e.hp)/100,6);}
+  const ht=G.t-(e.hitT||-9);if(ht>0&&ht<.2){c.fillStyle='#ff000055';c.beginPath();c.arc(x,y-20,34,0,7);c.fill();}
+}
+
+// --- ИСПРАВЛЕНИЕ 7: Упрощенная и безопасная версия drawPrev ---
+function drawPrev(){
+  const c=$('#prevCv').getContext('2d');
+  c.clearRect(0,0,150,170);
+  const x = 75, y = 112; // Центр холста
+  const hx = x, hy = y - 40; // Центр головы
+
+  // Рисуем голову
+  c.fillStyle='#f6ec12';
+  c.beginPath();
+  c.arc(hx, hy, 30, 0, Math.PI * 2);
+  c.fill();
+  c.stroke();
+
+  // Тело
+  const shirtCol = (SHIRTS.find(s => s.id === skin) || SHIRTS[0]).col;
+  c.fillStyle = shirtCol;
+  c.fillRect(hx - 28, hy + 10, 56, 54);
+
+  // Аксессуары
+  const e = { skin, hat, gls, fc };
+  if (AS.face[e.fc]) {
+    drawItem(c, AS.face[e.fc], [260, 250, 350, 350], hx, hy, 39, 'center');
+  }
+  if (AS.glasses[e.gls] && GLASSES.find(q => q.id === e.gls)) {
+    const glC = GLASSES.find(q => q.id === e.gls);
+    drawItem(c, AS.glasses[e.gls], glC.src, hx + glC.dx, hy + glC.dy + 2, glC.w, 'center');
+  }
+  if (AS.hat[e.hat] && HATS.find(q => q.id === e.hat)) {
+    const hatC = HATS.find(q => q.id === e.hat);
+    drawItem(c, AS.hat[e.hat], hatC.src, hx + hatC.dx, hy + hatC.dy - 5, hatC.w, 'bottom');
+  }
+}
+
+
+/* ============ КАТАЛОГ ============ */
+function buildShop(){
+  function createCard(item, ownedList, currentId, updateFn) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const isOwned = ownedList.includes(item.id);
+    const isEquipped = item.id === currentId;
+
+    let statusText = '';
+    if (isEquipped) {
+      statusText = '<span style="color:#ffd23e">✅ Надето</span>';
+    } else if (isOwned) {
+      statusText = '<span style="color:#45d155">🛒 Куплено</span>';
+    } else {
+      statusText = `<span>${item.price} 🪙</span>`;
+    }
+
+    card.innerHTML = `<h3>${item.n}</h3><div>${statusText}</div>`;
+    
+    const btn = document.createElement('button');
+    if (isEquipped) {
+      btn.textContent = 'Снять';
+      btn.onclick = () => {
+        updateFn('none');
+        drawPrev();
+        buildShop();
+      };
+    } else if (isOwned) {
+      btn.textContent = 'Надеть';
+      btn.onclick = () => {
+        updateFn(item.id);
+        drawPrev();
+        buildShop();
+      };
+    } else {
+      btn.textContent = 'Купить';
+      btn.onclick = () => {
+        if (coins >= item.price) {
+          addCoins(-item.price);
+          ownedList.push(item.id);
+          store.set(ownedKeyFor(item.kind), ownedList);
+          toast(`Куплено: ${item.n}`);
+          buildShop(); // Обновляем статус
+        } else {
+          toast('Недостаточно средств!');
+        }
+      };
+    }
+    card.appendChild(btn);
+    return card;
+  }
+
+  // Обновление
+  function updateSkin(id) { skin = id; store.set('bb_skin', skin); }
+  function updateHat(id) { hat = id; store.set('bb_hat', hat); }
+  function updateGlasses(id) { gls = id; store.set('bb_gls', gls); }
+  function updateFace(id) { fc = id; store.set('bb_fc', fc); }
+
+  $('#shopShirts').innerHTML = '';
+  SHIRTS.forEach(item => {
+    $('#shopShirts').appendChild(createCard(item, owned, skin, updateSkin));
+  });
+
+  $('#shopHats').innerHTML = '';
+  HATS.forEach(item => {
+    $('#shopHats').appendChild(createCard(item, ownedH, hat, updateHat));
+  });
+
+  $('#shopGlasses').innerHTML = '';
+  GLASSES.forEach(item => {
+    $('#shopGlasses').appendChild(createCard(item, ownedG, gls, updateGlasses));
+  });
+
+  $('#shopFaces').innerHTML = '';
+  FACES.forEach(item => {
+    $('#shopFaces').appendChild(createCard(item, ownedF, fc, updateFace));
+  });
+}
+
+
+/* ============ ОСТАЛЬНОЙ КОД (не изменён, кроме вызова buildShop) ============ */
+// ... (весь остальной код, начиная с const T=32, до конца скрипта, остается без изменений)
 const T=32,W=160,H=90;
 const BLOCKS={
  1:{n:'Земля',css:'background:linear-gradient(#6fd35a,#8a5a2b);border:3px solid #00000033;border-radius:4px;'},
@@ -595,7 +811,7 @@ function useTool(wx,wy,btn){
     G.bots.forEach(b=>{if(Math.hypot(b.x-wx,b.y-wy)<60){b.vx+=(b.x-wx)*8;b.vy-=300;hurt(b,10,'self');}});spawnParts(wx,wy,6,'#fff');}
   else if(tl===3){const t=getT(tx,ty);
     if(t&&t!==9){G.copyType=t;toast('Скопирован блок: '+BLOCKS[t].n);}
-    else if(!t&&G.copyType){if(!(tx===Math.floor(s.x/T)&&ty>=Math.floor((s.y-42)/T)&&ty<=Math.floor((s.y+42)/T)))world[ty*W+tx]=G.copyType;spawnParts(wx,wy,4,'#ffd23e');}}
+    else if(!t&&G.copyType){if(!(tx===Math.floor(s.x/T)&&ty>=Math.floor((s.y-42)/T)&&ty<=Math.floor((s.y+42)/T)))world[ty*W+tx]=G.copyType;spawnParts(wx,wy,4,'yellow');}}
   else if(tl===4){G.cd=.5;s.face=wx>=s.x?1:-1;const d=Math.hypot(wx-s.x,wy-s.y)||1;
     G.rockets.push({x:s.x+s.face*20,y:s.y-6,vx:(wx-s.x)/d*640,vy:(wy-s.y)/d*640,life:3,src:'self'});}
   else if(tl===5){G.cd=.2;if(s.onGround){s.vy=-640;s.onGround=false;}else if(s.air<1){s.air++;s.vy=-600;}}
@@ -680,163 +896,6 @@ function compileScript(src,lang){
     catch(e){toast('Ошибка JS: '+e.message);return null;}}
   return compileAny(src||'');
 }
-
-/* ============ ПЕРСОНАЖ (посадка исправлена) ============ */
-function drawItem(c,img,src,cx,cy,w,mode){
-  const hh=w*src[3]/src[2];
-  const y=mode==='bottom'?cy-hh:cy-hh/2;
-  c.drawImage(img,src[0],src[1],src[2],src[3],cx-w/2,y,w,hh);}
-function drawChar(c,x,y,e){
-  const tl=Math.min(5,Math.max(1,e.tool||1));
-  const spr=AS.tool[tl],shirt=AS.shirt[e.skin||'red'];
-  const face=AS.face[e.fc||'none'],glasses=AS.glasses[e.gls||'none'],hatI=AS.hat[e.hat||'none'];
-  const glC=GLASSES.find(q=>q.id===(e.gls||'none'));
-  const hatC=HATS.find(q=>q.id===(e.hat||'none'));
-  if(spr){
-    const sx=40,sy=250,sw=820,sh=830,k=88/sw,dw=88,dh=sh*k;
-    c.save();c.translate(x,y);if((e.face||1)<0)c.scale(-1,1);
-    const ox=-(402-40)*k,oy=46-dh;
-    c.drawImage(spr,sx,sy,sw,sh,ox,oy,dw,dh);
-    if(shirt)c.drawImage(shirt,235,565,335,515,ox+(235-sx)*k,oy+(565-sy)*k,335*k,515*k);
-    const hx=2,hy=-23; // центр головы
-    if(face)drawItem(c,face,[260,250,350,350],hx,hy,39,'center');
-    if(glasses&&glC)drawItem(c,glasses,glC.src,hx+glC.dx,hy+glC.dy,glC.w,'center');
-    if(hatI&&hatC)drawItem(c,hatI,hatC.src,hx+hatC.dx,hy+hatC.dy,hatC.w,'bottom');
-    c.restore();
-  }else{
-    const shirtCol=(SHIRTS.find(s=>s.id===(e.skin||'red'))||SHIRTS[0]).col;
-    const s2=1.7,hxv=x,hyv=y-40;
-    c.strokeStyle='#000';c.lineCap='round';
-    c.fillStyle=shirtCol;c.lineWidth=9;c.beginPath();c.rect(x-28,y-12,56,54);c.fill();c.stroke();
-    c.lineWidth=6;c.beginPath();c.arc(x+10,y+6,8,-1.6,1.6);c.stroke();c.beginPath();c.moveTo(x+15,y-2);c.lineTo(x+3,y+20);c.stroke();
-    c.fillStyle='#f6ec12';c.lineWidth=8;c.beginPath();c.arc(hxv,hyv,30,0,7);c.fill();c.stroke();
-    if(!face){c.lineWidth=5;c.beginPath();c.moveTo(x-15,hyv-6);c.lineTo(x+16,hyv-3);c.stroke();}
-    if(face)drawItem(c,face,[260,250,350,350],hxv,hyv,39*s2,'center');
-    if(glasses&&glC)drawItem(c,glasses,glC.src,hxv+glC.dx*s2,hyv+glC.dy*s2,glC.w*s2,'center');
-    if(hatI&&hatC)drawItem(c,hatI,hatC.src,hxv+hatC.dx*s2,hyv+hatC.dy*s2,hatC.w*s2,'bottom');
-    const hx=x+(e.face>=0?40:-40),hy=y+8;
-    const hand=(px,py)=>{c.fillStyle='#f6ec12';c.lineWidth=7;c.beginPath();c.rect(px-11,py-11,22,22);c.fill();c.stroke();};
-    if(tl===5){hand(x-40,y-24);hand(x+40,y-24);}else hand(hx,hy);
-    if(tl===1){c.strokeStyle='#8f8f8f';c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-24);c.lineTo(hx,hy-66);c.stroke();
-      c.strokeStyle='#f6ec12';c.lineWidth=10;c.beginPath();c.moveTo(hx-19,hy-22);c.lineTo(hx+19,hy-22);c.stroke();
-      c.strokeStyle='#5a5a5a';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-16);c.lineTo(hx,hy+16);c.stroke();}
-    else if(tl===3){c.strokeStyle='#b5764c';c.lineWidth=8;c.beginPath();c.moveTo(hx,hy-18);c.lineTo(hx,hy+30);c.stroke();
-      c.fillStyle='#3f3f3f';c.fillRect(hx-24,hy-46,48,28);}
-    else if(tl===4){c.strokeStyle='#8a8a8a';c.lineWidth=26;c.beginPath();c.moveTo(hx-14,hy-26);c.lineTo(hx+16,hy-30);c.stroke();
-      c.lineWidth=9;c.beginPath();c.moveTo(hx,hy-14);c.lineTo(hx,hy+18);c.stroke();}
-  }
-  if(e.name&&!e.self){c.fillStyle='#fff';c.font='12px sans-serif';c.textAlign='center';c.fillText(e.name,x,y-78);}
-  if(G.mode==='battle'&&e.hp!=null){
-    c.fillStyle='#0008';c.fillRect(x-25,y-72,50,6);
-    c.fillStyle=e.hp>40?'#45d155':'#ff5722';c.fillRect(x-25,y-72,50*Math.max(0,e.hp)/100,6);}
-  const ht=G.t-(e.hitT||-9);if(ht>0&&ht<.2){c.fillStyle='#ff000055';c.beginPath();c.arc(x,y-20,34,0,7);c.fill();}}
-
-// Восстановленная и исправленная функция drawPrev
-function drawPrev(){
-  const c=$('#prevCv').getContext('2d');
-  c.clearRect(0,0,150,170);
-
-  // Координаты центра головы в меню (примерные)
-  const x = 75; // Центр холста
-  const y = 112; // Центр холста
-  const hx = x; // Центр головы X
-  const hy = y - 40; // Центр головы Y (выше центра холста)
-
-  // Просто нарисуем голову и тело
-  c.fillStyle='#f6ec12'; // Цвет кожи
-  c.lineWidth=8;
-  c.beginPath();
-  c.arc(hx, hy, 30, 0, 7); // Голова
-  c.fill();
-  c.stroke();
-
-  // Тело
-  const shirtCol=(SHIRTS.find(s=>s.id===skin)||SHIRTS[0]).col;
-  c.fillStyle=shirtCol;
-  c.fillRect(hx-28, hy+10, 56, 54); // Тело
-
-  // Отрисовка аксессуаров
-  const face = AS.face[fc];
-  const glasses = AS.glasses[gls];
-  const hatI = AS.hat[hat];
-
-  const glC = GLASSES.find(q => q.id === gls);
-  const hatC = HATS.find(q => q.id === hat);
-
-  if(face){
-    drawItem(c, face, [260, 250, 350, 350], hx, hy, 39, 'center');
-  }
-
-  if(glasses && glC){
-    drawItem(c, glasses, glC.src, hx + glC.dx, hy + glC.dy, glC.w, 'center');
-  }
-
-  if(hatI && hatC){
-    drawItem(c, hatI, hatC.src, hx + hatC.dx, hy + hatC.dy, hatC.w, 'bottom');
-  }
-}
-
-
-/* ============ КАТАЛОГ ============ */
-function buildShop(){
-  // Функция для построения карточки предмета
-  function createCard(item, ownedList, updateFn) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    const isOwned = ownedList.includes(item.id);
-    card.innerHTML = `<h3>${item.n}</h3><div>${item.price} 🪙</div>`;
-    const btn = document.createElement('button');
-    btn.textContent = isOwned ? ' equipped ' : ' buy ';
-    btn.onclick = () => {
-      if (isOwned) {
-        updateFn(item.id);
-        buildShop(); // Перестроить, чтобы обновить статус "equipped"
-      } else if (coins >= item.price) {
-        addCoins(-item.price);
-        ownedList.push(item.id);
-        store.set(ownedKeyFor(item.kind), ownedList);
-        toast('Куплено: ' + item.n);
-        buildShop(); // Перестроить, чтобы обновить статус "buy/equipped"
-      } else {
-        toast('Недостаточно средств!');
-      }
-    };
-    card.appendChild(btn);
-    return card;
-  }
-
-  // Обновление скина персонажа
-  function updateSkin(id) { skin = id; store.set('bb_skin', skin); drawPrev(); }
-  function updateHat(id) { hat = id; store.set('bb_hat', hat); drawPrev(); }
-  function updateGlasses(id) { gls = id; store.set('bb_gls', gls); drawPrev(); }
-  function updateFace(id) { fc = id; store.set('bb_fc', fc); drawPrev(); }
-
-  // Очистка и заполнение секций
-  $('#shopShirts').innerHTML = '';
-  owned.forEach(id => {
-    const item = ITEM_INDEX[id];
-    if (item) $('#shopShirts').appendChild(createCard(item, owned, updateSkin));
-  });
-
-  $('#shopHats').innerHTML = '';
-  ownedH.forEach(id => {
-    const item = ITEM_INDEX[id];
-    if (item) $('#shopHats').appendChild(createCard(item, ownedH, updateHat));
-  });
-
-  $('#shopGlasses').innerHTML = '';
-  ownedG.forEach(id => {
-    const item = ITEM_INDEX[id];
-    if (item) $('#shopGlasses').appendChild(createCard(item, ownedG, updateGlasses));
-  });
-
-  $('#shopFaces').innerHTML = '';
-  ownedF.forEach(id => {
-    const item = ITEM_INDEX[id];
-    if (item) $('#shopFaces').appendChild(createCard(item, ownedF, updateFace));
-  });
-}
-
 
 /* ============ ОТРИСОВКА ============ */
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
@@ -988,7 +1047,7 @@ function equip(kind,id){
   if(kind==='glasses'){gls=id;store.set('bb_gls',gls);}
   if(kind==='face'){fc=id;store.set('bb_fc',fc);}
   toast('Выбрано: ' + ITEM_INDEX[id]?.n || 'неизвестный предмет');
-  drawPrev(); // Обновляем превью
+  drawPrev();
 }
 </script>
 </body>
