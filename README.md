@@ -75,9 +75,20 @@
   .gLogo span:nth-child(1){color:#4285F4}.gLogo span:nth-child(2){color:#EA4335}.gLogo span:nth-child(3){color:#FBBC05}.gLogo span:nth-child(4){color:#4285F4}.gLogo span:nth-child(5){color:#34A853}.gLogo span:nth-child(6){color:#EA4335}
   .mCard input{background:#f1f3f4;color:#202124;border:1px solid #dadce0}
   #toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#202124e6;padding:10px 18px;border-radius:30px;z-index:99;display:none;max-width:92vw}
+  
+  /* === МУЗЫКАЛЬНЫЙ ПЛЕЕР === */
+  #musicPanel{position:fixed;bottom:calc(8px + env(safe-area-inset-bottom));right:calc(8px + env(safe-area-inset-right));display:flex;align-items:center;gap:8px;background:#1a2236;padding:8px 12px;border-radius:30px;z-index:100}
+  #musicPanel.hidden{display:none}
+  #musicPanel button{width:36px;height:36px;padding:0;border-radius:50%;font-size:16px}
+  #trackName{font-size:12px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#ffd23e}
+  #volSlider{width:60px;height:4px;background:#33406b;border-radius:2px;appearance:none}
+  #volSlider::-webkit-slider-thumb{appearance:none;width:12px;height:12px;background:#ffd23e;border-radius:50%;cursor:pointer}
 </style>
 </head>
 <body>
+
+<!-- АУДИО ЭЛЕМЕНТЫ -->
+<audio id="bgMusic" loop></audio>
 
 <div id="menu" class="screen">
   <div id="userChip" class="hidden"><span id="uName"></span><button id="logout">Выйти</button></div>
@@ -208,13 +219,21 @@ border-radius:4px;</textarea>
   </div>
 </div>
 
+<!-- МУЗЫКАЛЬНЫЙ ПЛЕЕР -->
+<div id="musicPanel" class="hidden">
+  <button id="musicToggle">▶</button>
+  <span id="trackName">Музыка</span>
+  <input type="range" id="volSlider" min="0" max="100" value="50">
+  <button id="musicNext">⏭</button>
+</div>
+
 <div id="toast"></div>
 
 <script>
 'use strict';
 const $=s=>document.querySelector(s);
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let settings=store.get('bb_set',{gid:''});
+let settings=store.get('bb_set',{gid:'',volume:50,musicOn:true});
 let user=store.get('bb_user',null);
 let coins=store.get('bb_coins',0);
 let xp=store.get('bb_xp',0);
@@ -239,6 +258,61 @@ function goFS(){const el=document.documentElement;
     if(rq)rq.call(el).catch(()=>{});
   }catch(e){}}
 $('#btnFS').onclick=goFS;
+
+/* ============ МУЗЫКАЛЬНЫЙ ПЛЕЕР ============ */
+const MUSIC_LIST=[
+  {name:'Winter Theme',file:'music/winter_theme.mp3'},
+  // Добавьте свои треки сюда:
+  // {name:'Название трека',file:'music/имя_файла.mp3'}
+];
+let currentTrack=0;
+const bgMusic=$('#bgMusic');
+bgMusic.volume=settings.volume/100;
+
+function updateMusicUI(){
+  $('#trackName').textContent=MUSIC_LIST[currentTrack]?.name||'Музыка';
+  $('#musicToggle').textContent=bgMusic.paused?'▶':'⏸';
+  $('#musicPanel').classList.toggle('hidden',!settings.musicOn);
+}
+
+function playTrack(idx){
+  if(!MUSIC_LIST[idx])return;
+  currentTrack=idx;
+  bgMusic.src=MUSIC_LIST[currentTrack].file;
+  bgMusic.play().catch(()=>{});
+  updateMusicUI();
+}
+
+$('#musicToggle').onclick=()=>{
+  if(bgMusic.paused){bgMusic.play();updateMusicUI();}
+  else{bgMusic.pause();updateMusicUI();}
+};
+
+$('#musicNext').onclick=()=>{
+  currentTrack=(currentTrack+1)%MUSIC_LIST.length;
+  playTrack(currentTrack);
+};
+
+$('#volSlider').oninput=(e)=>{
+  const v=+e.target.value;
+  bgMusic.volume=v/100;
+  settings.volume=v;
+  store.set('bb_set',settings);
+};
+
+bgMusic.onended=()=>playTrack((currentTrack+1)%MUSIC_LIST.length);
+
+function initMusic(){
+  if(MUSIC_LIST.length===0){$('#musicPanel').classList.add('hidden');return;}
+  updateMusicUI();
+  if(settings.musicOn&&MUSIC_LIST.length>0){
+    document.addEventListener('click',function initPlay(){
+      bgMusic.play().catch(()=>{});
+      document.removeEventListener('click',initPlay);
+    },{once:true});
+    playTrack(0);
+  }
+}
 
 /* ============ ВЕЩИ (посадка исправлена: шапки — низом на макушку, очки — по глазам) ============ */
 const SHIRTS=[
@@ -484,7 +558,7 @@ updChip();
 if(settings.gid){const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';document.head.appendChild(s);}
 $('#setBtn').onclick=()=>{$('#setGid').value=settings.gid||'';$('#settings').classList.remove('hidden');};
 $('#setClose').onclick=()=>$('#settings').classList.add('hidden');
-$('#setSave').onclick=()=>{settings={gid:$('#setGid').value.trim()};store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
+$('#setSave').onclick=()=>{settings={gid:$('#setGid').value.trim(),volume:settings.volume,musicOn:settings.musicOn};store.set('bb_set',settings);$('#settings').classList.add('hidden');toast('Сохранено');};
 
 /* ============ ИНСТРУМЕНТЫ ============ */
 const TOOLS=[
@@ -882,5 +956,133 @@ function equip(kind,id){
   if(kind==='hat'){hat=id;store.set('bb_hat',hat);}
   if(kind==='glasses'){gls=id;store.set('bb_gls',gls);}
   if(kind==='face'){fc=id;store.set('bb_fc',fc);}
-  toast
-  
+  toast('✔ '+ITEM_INDEX[id].n);drawPrev();}
+function buildShop(){
+  const mkCard=(i,buy)=>{
+    const d=document.createElement('div');d.className='card';
+    const own=owned.includes(i.id)||(i.sp&&true);
+    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
+      '<h3>'+i.n+'</h3>'+
+      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
+    const b=document.createElement('button');
+    if(own){b.textContent='Надеть';b.onclick=()=>equip(i.kind,i.id);}
+    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;owned.push(i.id);store.set(ownedKeyFor(i.kind),owned);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
+    else{b.disabled=true;b.textContent='—';}
+    d.appendChild(b);return d;};
+  const mkHatCard=(i,buy)=>{
+    const d=document.createElement('div');d.className='card';
+    const own=ownedH.includes(i.id)||(i.sp&&true);
+    const c=$('#cssPrev').getContext('2d');c.clearRect(0,0,96,96);
+    if(AS.tool[1]){const temp={tool:1,face:1,skin:'red',hat:i.id,gls:'none',fc:'none',self:true};drawChar(c,48,52,temp);}
+    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
+      '<h3>'+i.n+'</h3>'+
+      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
+    const b=document.createElement('button');
+    if(own){b.textContent='Надеть';b.onclick=()=>equip('hat',i.id);}
+    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;ownedH.push(i.id);store.set('bb_ownedH',ownedH);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
+    else{b.disabled=true;b.textContent='—';}
+    d.appendChild(b);return d;};
+  const mkGlsCard=(i,buy)=>{
+    const d=document.createElement('div');d.className='card';
+    const own=ownedG.includes(i.id)||(i.sp&&true);
+    const c=$('#cssPrev').getContext('2d');c.clearRect(0,0,96,96);
+    if(AS.tool[1]){const temp={tool:1,face:1,skin:'red',hat:'none',gls:i.id,fc:'none',self:true};drawChar(c,48,52,temp);}
+    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
+      '<h3>'+i.n+'</h3>'+
+      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
+    const b=document.createElement('button');
+    if(own){b.textContent='Надеть';b.onclick=()=>equip('glasses',i.id);}
+    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;ownedG.push(i.id);store.set('bb_ownedG',ownedG);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
+    else{b.disabled=true;b.textContent='—';}
+    d.appendChild(b);return d;};
+  const mkFaceCard=(i,buy)=>{
+    const d=document.createElement('div');d.className='card';
+    const own=ownedF.includes(i.id);
+    const c=$('#cssPrev').getContext('2d');c.clearRect(0,0,96,96);
+    if(AS.tool[1]){const temp={tool:1,face:1,skin:'red',hat:'none',gls:'none',fc:i.id,self:true};drawChar(c,48,52,temp);}
+    d.innerHTML='<div class="thumb"><canvas width="96" height="96"></canvas></div>'+
+      '<h3>'+i.n+'</h3>'+
+      '<div style="font-size:13px;opacity:.8">'+(own?'✅ Ваше':buy?i.price+' 🪙':'—')+'</div>';
+    const b=document.createElement('button');
+    if(own){b.textContent='Надеть';b.onclick=()=>equip('face',i.id);}
+    else if(buy){b.className='primary';b.textContent='Купить';b.onclick=()=>{if(coins>=i.price){coins-=i.price;ownedF.push(i.id);store.set('bb_ownedF',ownedF);toast('Куплено: '+i.n);buildShop();}else toast('Не хватает эникойнов!');};}
+    else{b.disabled=true;b.textContent='—';}
+    d.appendChild(b);return d;};
+  $('#shopShirts').innerHTML='';SHIRTS.forEach(i=>{if(i.id!=='red')$('#shopShirts').appendChild(mkCard(i,true));});
+  $('#shopHats').innerHTML='';HATS.forEach(i=>{if(i.id!=='none')$('#shopHats').appendChild(mkHatCard(i,true));});
+  $('#shopGlasses').innerHTML='';GLASSES.forEach(i=>{if(i.id!=='none')$('#shopGlasses').appendChild(mkGlsCard(i,true));});
+  $('#shopFaces').innerHTML='';FACES.forEach(i=>$('#shopFaces').appendChild(mkFaceCard(i,true)));}
+
+/* ============ СТУДИЯ ============ */
+let edTool=1,edMap=new Uint8Array(W*H);
+const edCv=$('#edCv'),edCtx=edCv.getContext('2d');
+function edInit(){
+  edMap=new Uint8Array(world);
+  edCv.width=edCv.clientWidth;edCv.height=edCv.clientHeight;
+  const pal=$('#palette');pal.innerHTML='';
+  Object.entries(BLOCKS).forEach(([k,v])=>{
+    const b=document.createElement('button');b.style.cssText=v.css;b.title=v.n;
+    if(+k===edTool)b.classList.add('sel');
+    b.onclick=()=>{edTool=+k;pal.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};
+    pal.appendChild(b);});
+  edDraw();}
+function edDraw(){
+  const vw=edCv.width,vh=edCv.height;
+  edCtx.fillStyle='#87ceeb';edCtx.fillRect(0,0,vw,vh);
+  const cw=edCv.clientWidth/W,ch=edCv.clientHeight/H;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const t=edMap[y*W+x];if(t)drawTile(edCtx,t,x*cw,y*ch);}
+}
+edCv.addEventListener('pointerdown',e=>{
+  const r=edCv.getBoundingClientRect(),cx=(e.clientX-r.left)*W/edCv.clientWidth,cy=(e.clientY-r.top)*H/edCv.clientHeight;
+  const tx=Math.floor(cx),ty=Math.floor(cy);
+  if(inB(tx,ty)){if(e.button===2)edMap[ty*W+tx]=0;else edMap[ty*W+tx]=edTool;edDraw();}
+});
+$('#edNew').onclick=()=>{edMap=new Uint8Array(W*H);edDraw();};
+$('#edLoad').onclick=()=>{edMap=new Uint8Array(world);edDraw();};
+
+/* Вкладки студии */
+$('.tabs').onclick=e=>{if(e.target.dataset.tab){
+  $('.tabs .sel')?.classList.remove('sel');e.target.classList.add('sel');
+  $('.panel:not(.hidden)').classList.add('hidden');$('#tab-'+e.target.dataset.tab).classList.remove('hidden');
+}};
+$('#scrTxt').value=ANY_EX;
+$('#cssBlock').innerHTML=Object.entries(BLOCKS).map(([k,v])=>'<option value="'+k+'">'+v.n+'</option>').join('');
+$('#cssApply').onclick=()=>{const t=$('#cssBlock').value,v=$('#cssTxt').value.trim();G.models[t]=v;toast('Применено к блоку: '+BLOCKS[t].n);};
+$('#scrCheck').onclick=()=>{const src=$('#scrTxt').value,lang=$('#langSel').value;
+  if(compileScript(src,lang)){toast('✓ Код проверен!');}else toast('✘ Ошибка в коде');};
+$('#lesCards').innerHTML='';LESSONS.forEach(l=>{
+  const d=document.createElement('div');d.className='card';
+  d.innerHTML='<h3>'+l.n+'</h3><div style="font-size:13px;opacity:.8">'+l.t+'</div><pre>'+l.c+'</pre>';
+  const b=document.createElement('button');b.textContent='Загрузить';b.onclick=()=>{$('#scrTxt').value=l.c;$('#langSel').value='any';$('.tabs [data-tab="scr"]').click();};
+  d.appendChild(b);$('#lesCards').appendChild(d);});
+
+/* Сохранение проектов */
+function saveProject(pub){
+  const map=encMap(edMap),script=$('#scrTxt').value,lang=$('#langSel').value,css={},gui=$('#guiTxt').value;
+  Object.keys(G.models).forEach(k=>css[k]=G.models[k]);
+  const proj={name:$('#pName').value,map,script,scriptLang:lang,models:css,gui,pub};
+  const all=store.get('bb_projects',[]);all.push(proj);store.set('bb_projects',all);
+  toast(pub?'📢 Опубликовано!':'💾 Сохранено!');}
+$('#pSave').onclick=()=>saveProject(false);
+$('#pPub').onclick=()=>requireAuth(()=>saveProject(true));
+$('#pTest').onclick=()=>{
+  const map=encMap(edMap),script=$('#scrTxt').value,lang=$('#langSel').value,css={},gui=$('#guiTxt').value;
+  Object.keys(G.models).forEach(k=>css[k]=G.models[k]);
+  startGame({mode:'sandbox',project:{map,script,scriptLang:lang,models:css,gui}});};
+
+/* Выставка */
+function buildExpo(){
+  const all=store.get('bb_projects',[]).filter(p=>p.pub);
+  const w=$('#exCards');w.innerHTML='';
+  if(!all.length){w.innerHTML='<div style="opacity:.6;padding:20px">Пока нет опубликованных игр</div>';return;}
+  all.forEach(p=>{
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML='<h3>'+p.name+'</h3><div style="font-size:12px;opacity:.7">Автор: '+ (user?.name||'Аноним') +'</div>';
+    const b=document.createElement('button');b.textContent='Играть';b.onclick=()=>startGame({mode:'sandbox',project:p});
+    d.appendChild(b);w.appendChild(d);});}
+
+// Запуск музыки при загрузке
+initMusic();
+</script>
+</body>
+</html>
